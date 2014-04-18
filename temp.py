@@ -19,7 +19,7 @@ def makeTopology(n_atoms):
         topology.addAtom('C', app.element.carbon, residue)
     return topology
 '''
-Set up system and integrator
+Set up -  system and integrator
 '''
 system = mm.System()
 N_PARTICLES = 2
