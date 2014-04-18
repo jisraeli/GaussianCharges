@@ -26,8 +26,8 @@ pdb = app.PDBFile('TwoWaters.pdb')
 forcefield = app.ForceField('tip3p.xml')
 system = forcefield.createSystem(pdb.topology, nonbondedMethod=app.PME, 
     nonbondedCutoff=CUTOFF_DIST)
+'''
 integrator = mm.CustomIntegrator(0.002)
-print system.gtNumForces()
 integrator.addPerDofVariable("x1", 0)
 integrator.addUpdateContextState();
 integrator.addComputePerDof("v", "v+0.5*dt*f1/m")
@@ -36,7 +36,10 @@ integrator.addComputePerDof("x1", "x")
 integrator.addConstrainPositions()
 integrator.addComputePerDof("v", "v+0.5*dt*f1/m+(x-x1)/dt")
 integrator.addConstrainVelocities()
+'''
 sys.exit()
+
+
 '''
 Set up PME reciprocal and Gaussian forces in group 1
 '''
