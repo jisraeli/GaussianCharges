@@ -5,7 +5,7 @@ from simtk.openmm import app
 from simtk.unit import*
 from pylab import*
 from sys import stdout
-import simulation1
+# import simulation1
 import sys
 
 epsilon = 8.854187817620E-12*farad/meter
@@ -20,13 +20,14 @@ def makeTopology(n_atoms):
         topology.addAtom('C', app.element.carbon, residue)
     return topology
 '''
-Set up -  system and integrator
+Set up system with TIP3P, forces in group 1,
+and PME_Direct in group 0
 '''
 pdb = app.PDBFile('TwoWaters.pdb')
+pdb.topology.setUnitCellDimensions((2,2,2))
 forcefield = app.ForceField('tip3p.xml')
 system = forcefield.createSystem(pdb.topology, nonbondedMethod=app.PME, 
     nonbondedCutoff=CUTOFF_DIST)
-'''
 integrator = mm.CustomIntegrator(0.002)
 integrator.addPerDofVariable("x1", 0)
 integrator.addUpdateContextState();
@@ -36,38 +37,43 @@ integrator.addComputePerDof("x1", "x")
 integrator.addConstrainPositions()
 integrator.addComputePerDof("v", "v+0.5*dt*f1/m+(x-x1)/dt")
 integrator.addConstrainVelocities()
+for i in range(len(system.getForces())):
+    force = system.getForce(i)
+    if i==2: 
+        force.setReciprocalSpaceForceGroup(1)
+    else: 
+        force.setForceGroup(1)
 '''
-sys.exit()
-
-
+Create gaussian force with leanord-Jones potential
 '''
-Set up PME reciprocal and Gaussian forces in group 1
-'''
-force = mm.NonbondedForce()
-force.setNonbondedMethod(mm.NonbondedForce.PME)
-force.setReciprocalSpaceForceGroup(1)
+N_PARTICLES = system.getNumParticles()
+PME = system.getForce(2)
 a, b = [1.0/((0.2*nanometer)**2)]*2
 p = sqrt(a * b / (a + b))
-ERROR_TOL = force.getEwaldErrorTolerance()
+ERROR_TOL = PME.getEwaldErrorTolerance()
 ALPHA = sqrt(-log(2*ERROR_TOL))/CUTOFF_DIST
-forceGaussian = mm.CustomNonbondedForce("COULOMB_CONSTANT * q1 * q2 * (erf(p*r)-erf(ALPHA*r)) / r")
+forceGaussian = mm.CustomNonbondedForce("COULOMB_CONSTANT*q1*q2*(erf(p*r)-erf(ALPHA*r))/r + 4*epsilon*((sigma/r)^12-(sigma/r)^6)")
 forceGaussian.setNonbondedMethod(mm.CustomNonbondedForce.CutoffPeriodic)
 forceGaussian.addGlobalParameter("p", p)
 forceGaussian.addGlobalParameter("ALPHA", ALPHA)
 forceGaussian.addGlobalParameter("COULOMB_CONSTANT", COULOMB_CONSTANT)
 forceGaussian.addPerParticleParameter("q")
+forceGaussian.addPerParticleParameter("sigma")
+forceGaussian.addPerParticleParameter("epsilon")
 for i in range(N_PARTICLES):
-    force.addParticle(CHARGE[i], 1.0, 0.0)
-    forceGaussian.addParticle([CHARGE[i]])
-system.addForce(force), system.addForce(forceGaussian)
-TwoParticles = np.asarray([[0.5, 0, 0], [1.5, 0, 0]])
+    forceGaussian.addParticle(PME.getParticleParameters(i))
+system.addForce(forceGaussian)
+'''
+create a simulation1 object and integrate
+'''
 platform = mm.Platform.getPlatformByName('CPU')
 fakeTopology = makeTopology(N_PARTICLES)
 fakeTopology.setUnitCellDimensions((2,2,2))
-simulation = simulation1.Simulation1(fakeTopology, system, integrator, platform)
-simulation.context.setPositions(TwoParticles)
-simulation.context.setVelocities(np.zeros((N_PARTICLES, 3)))
+simulation = simulation1.Simulation1(pdb.topology, system, integrator, platform)
+simulation.context.setPositions(pdb.positions)
+simulation.context.setVelocitiesToTemperature(300*unit.kelvin)
 simulation.reporters.append(app.DCDReporter('trajectory.dcd', 5))
 simulation.reporters.append(app.StateDataReporter(stdout, 10, step=True, kineticEnergy=True, potentialEnergy=True,
      totalEnergy=True, separator='\t'))
-simulation.step(10000)
+simulation.step(1000)
+sys.exit()
