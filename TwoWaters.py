@@ -39,15 +39,19 @@ for i in range(len(system.getForces())):
         force.setForceGroup(1)
 '''
 Create gaussian force with leanord-Jones potential
+TODO: exclude forceGaussian interactions between
+atoms in the same molecule
 '''
+
 N_PARTICLES = system.getNumParticles()
 PME = system.getForce(2)
-a, b = [1.0/((0.2*nanometer)**2)]*2
+a, b = [1.0/((0.02*nanometer)**2)]*2
 p = sqrt(a * b / (a + b))
 ERROR_TOL = PME.getEwaldErrorTolerance()
 ALPHA = sqrt(-log(2*ERROR_TOL))/CUTOFF_DIST
 forceGaussian = mm.CustomNonbondedForce("COULOMB_CONSTANT*q1*q2*(erf(p*r)-erf(ALPHA*r))/r + 4*epsilon*((sigma/r)^12-(sigma/r)^6)")
 forceGaussian.setNonbondedMethod(mm.CustomNonbondedForce.CutoffPeriodic)
+forceGaussian.setForceGroup(1)
 forceGaussian.addGlobalParameter("p", p)
 forceGaussian.addGlobalParameter("ALPHA", ALPHA)
 forceGaussian.addGlobalParameter("COULOMB_CONSTANT", COULOMB_CONSTANT)
@@ -69,9 +73,9 @@ print simulation.context.getState(getEnergy=True).getPotentialEnergy()
 simulation.context.setVelocitiesToTemperature(300*unit.kelvin)
 print('Equilibrating...')
 simulation.step(100)
-simulation.reporters.append(app.DCDReporter('GaussianTrajectory.dcd', 10))
-simulation.reporters.append(app.StateDataReporter(stdout, 10, step=True, 
+simulation.reporters.append(app.DCDReporter('GaussianTrajectory_0.02Width.dcd', 1))
+simulation.reporters.append(app.StateDataReporter(stdout, 1, step=True, 
     potentialEnergy=True, temperature=True, progress=True, remainingTime=True, 
-    speed=True, totalSteps=1000, separator='\t'))
+    speed=True, totalSteps=2000, separator='\t'))
 simulation.step(2000)
 
