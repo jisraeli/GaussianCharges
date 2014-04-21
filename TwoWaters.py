@@ -17,8 +17,8 @@ Set up system with TIP3P, forces in group 1,
 and PME_Direct in group 0
 '''
 pdb = app.PDBFile('TwoWaters.pdb')
-pdb.topology.setUnitCellDimensions((10,10,10))
-forcefield = app.ForceField('amber99sbildn.xml', 'tip3p.xml')
+pdb.topology.setUnitCellDimensions((2,2,2))
+forcefield = app.ForceField('tip3p.xml')
 system = forcefield.createSystem(pdb.topology, nonbondedMethod=app.PME, 
     nonbondedCutoff=1.0*unit.nanometers, constraints=app.HBonds, rigidWater=True, 
     ewaldErrorTolerance=0.0005)
@@ -60,16 +60,18 @@ system.addForce(forceGaussian)
 '''
 create a simulation1 object and integrate
 '''
-platform = mm.Platform.getPlatformByName('CPU')
+platform = mm.Platform.getPlatformByName('Reference')
 simulation = simulation1.Simulation1(pdb.topology, system, integrator, platform)
 simulation.context.setPositions(pdb.positions)
 print('Minimizing...')
 simulation.minimizeEnergy()
-sys.exit()
-print "works"
+print simulation.context.getState(getEnergy=True).getPotentialEnergy()
 simulation.context.setVelocitiesToTemperature(300*unit.kelvin)
-simulation.reporters.append(app.DCDReporter('trajectory.dcd', 5))
-simulation.reporters.append(app.StateDataReporter(stdout, 10, step=True, kineticEnergy=True, potentialEnergy=True,
-     totalEnergy=True, separator='\t'))
-simulation.step(1000)
+print('Equilibrating...')
+simulation.step(100)
+simulation.reporters.append(app.DCDReporter('GaussianTrajectory.dcd', 10))
+simulation.reporters.append(app.StateDataReporter(stdout, 10, step=True, 
+    potentialEnergy=True, temperature=True, progress=True, remainingTime=True, 
+    speed=True, totalSteps=1000, separator='\t'))
+simulation.step(2000)
 
