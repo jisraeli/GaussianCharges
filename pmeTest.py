@@ -39,6 +39,7 @@ for i in range(len(systemTest.getForces())):
         force.setForceGroup(1)
 '''
 Create PME_direct force with leanord-Jones potential
+Include 1-2 and 1-3 exclusions from PME
 '''
 N_PARTICLES = systemTest.getNumParticles()
 PME = systemTest.getForce(2)
@@ -72,7 +73,7 @@ print('Equilibrating...')
 simulationTest.step(100)
 print('Simulating...')
 simulationTest.reporters.append(app.DCDReporter('pmeTest.dcd', 2))
-simulationTest.reporters.append(app.StateDataReporter(stdout, 1, step=True, 
+simulationTest.reporters.append(app.StateDataReporter(stdout, 10, step=True, 
     potentialEnergy=True, temperature=True, progress=True, remainingTime=True, 
     speed=True, totalSteps=2000, separator='\t'))
 simulationTest.step(2000)
