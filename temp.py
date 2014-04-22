@@ -13,8 +13,8 @@ pdb = app.PDBFile('TwoWaters.pdb')
 pdb.topology.setUnitCellDimensions((2,2,2))
 forcefield = app.ForceField('tip3p.xml')
 
-system = forcefield.createSystem(pdb.topology, nonbondedMethod=app.PME, 
-    nonbondedCutoff=1.0*unit.nanometers, constraints=app.HBonds, rigidWater=True, 
+system = forcefield.createSystem(pdb.topology, nonbondedMethod=app.NoCutoff, 
+    constraints=app.HBonds, rigidWater=True, 
     ewaldErrorTolerance=0.0005)
 integrator = mm.VerletIntegrator(2.0*unit.femtoseconds)
 integrator.setConstraintTolerance(0.00001)
@@ -22,8 +22,18 @@ integrator.setConstraintTolerance(0.00001)
 platform = mm.Platform.getPlatformByName('Reference')
 simulation = app.Simulation(pdb.topology, system, integrator, platform)
 simulation.context.setPositions(pdb.positions)
+PME = system.getForce(2)
+N_PARTICLES = system.getNumParticles()
+print "Particle parameters: "
+for i in range(N_PARTICLES):
+    charge ,sigma, epsilon = PME.getParticleParameters(i)
+    PME.setParticleParameters(i, 0.0, sigma, epsilon)
+    print PME.getParticleParameters(i)
 print "Energy: ", simulation.context.getState(getEnergy=True).getPotentialEnergy()
 sys.exit()
+
+
+'''
 print('Minimizing...')
 simulation.minimizeEnergy()
 print simulation.context.getState(getEnergy=True).getPotentialEnergy()
@@ -40,4 +50,4 @@ simulation.reporters.append(app.StateDataReporter(stdout, 10, step=True,
 print('Running Production...')
 simulation.step(2000)
 print('Done!')
-
+'''
