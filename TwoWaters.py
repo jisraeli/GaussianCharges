@@ -39,10 +39,9 @@ for i in range(len(system.getForces())):
         force.setForceGroup(1)
 '''
 Create gaussian force with leanord-Jones potential
-TODO: exclude forceGaussian interactions between
-atoms in the same molecule
+TODO: UseDispersionCorrection if there's a thermostat
+TODO: scale 14 interactions in bigger molecules
 '''
-
 N_PARTICLES = system.getNumParticles()
 PME = system.getForce(2)
 a, b = [1.0/((0.02*nanometer)**2)]*2
@@ -51,6 +50,9 @@ ERROR_TOL = PME.getEwaldErrorTolerance()
 ALPHA = sqrt(-log(2*ERROR_TOL))/CUTOFF_DIST
 forceGaussian = mm.CustomNonbondedForce("COULOMB_CONSTANT*q1*q2*(erf(p*r)-erf(ALPHA*r))/r + 4*epsilon*((sigma/r)^12-(sigma/r)^6)")
 forceGaussian.setNonbondedMethod(mm.CustomNonbondedForce.CutoffPeriodic)
+for i in range(PME.getNumExceptions()):
+    Particles = PME.getExceptionParameters(i)[:2]
+    forceGaussian.addExclusion(Particles[0], Particles[1])
 forceGaussian.setForceGroup(1)
 forceGaussian.addGlobalParameter("p", p)
 forceGaussian.addGlobalParameter("ALPHA", ALPHA)
