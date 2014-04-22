@@ -40,7 +40,7 @@ for i in range(len(system.getForces())):
 '''
 Create gaussian force with leanord-Jones potential
 TODO: UseDispersionCorrection if there's a thermostat
-TODO: scale 1--4 interactions in bigger molecules
+TODO: scale 1-4 interactions in bigger molecules
 '''
 N_PARTICLES = system.getNumParticles()
 PME = system.getForce(2)
