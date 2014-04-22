@@ -12,13 +12,11 @@ import sys
 epsilon = 8.854187817620E-12*farad/meter
 COULOMB_CONSTANT = (AVOGADRO_CONSTANT_NA/(4.0*pi*epsilon)).value_in_unit_system(md_unit_system)
 CUTOFF_DIST = 1*nanometer
-'''
-Set up system with TIP3P, forces in group 1,
-and PME_Direct in group 0
-'''
+
 pdb = app.PDBFile('TwoWaters.pdb')
 pdb.topology.setUnitCellDimensions((2,2,2))
 forcefield = app.ForceField('tip3p.xml')
+
 systemTest = forcefield.createSystem(pdb.topology, nonbondedMethod=app.PME, 
     nonbondedCutoff=1.0*unit.nanometers, constraints=app.HBonds, rigidWater=True, 
     ewaldErrorTolerance=0.0005)
