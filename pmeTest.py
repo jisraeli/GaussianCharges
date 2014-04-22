@@ -21,7 +21,7 @@ pdb.topology.setUnitCellDimensions((2,2,2))
 forcefield = app.ForceField('tip3p.xml')
 systemTest = forcefield.createSystem(pdb.topology, nonbondedMethod=app.PME, 
     nonbondedCutoff=1.0*unit.nanometers, constraints=app.HBonds, rigidWater=True, 
-    ewaldErrorTolerance=0.0005)
+    ewaldErrorTolerance=0.0001)
 integratorTest = mm.CustomIntegrator(0.002)
 integratorTest.addPerDofVariable("x1", 0)
 integratorTest.addUpdateContextState();
@@ -44,7 +44,7 @@ N_PARTICLES = systemTest.getNumParticles()
 PME = systemTest.getForce(2)
 ERROR_TOL = PME.getEwaldErrorTolerance()
 ALPHA = sqrt(-log(2*ERROR_TOL))/CUTOFF_DIST
-forceTest = mm.CustomNonbondedForce("COULOMB_CONSTANT*q1*q2*(erfc(ALPHA*r))/r + 4*epsilon*((sigma/r)^12-(sigma/r)^6)")
+forceTest = mm.CustomNonbondedForce("COULOMB_CONSTANT*q1*q2*erfc(ALPHA*r)/r + 4*epsilon*((sigma/r)^12-(sigma/r)^6)")
 forceTest.setNonbondedMethod(mm.CustomNonbondedForce.CutoffPeriodic)
 for i in range(PME.getNumExceptions()):
     Particles = PME.getExceptionParameters(i)[:2]
