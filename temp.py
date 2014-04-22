@@ -11,12 +11,31 @@ import sys
 
 pdb = app.PDBFile('TwoWaters.pdb')
 pdb.topology.setUnitCellDimensions((2,2,2))
-forcefield = app.ForceField('amber99sbildn.xml', 'tip3p.xml')
+forcefield = app.ForceField('tip3p.xml')
 
 system = forcefield.createSystem(pdb.topology, nonbondedMethod=app.PME, 
     nonbondedCutoff=1.0*unit.nanometers, constraints=app.HBonds, rigidWater=True, 
     ewaldErrorTolerance=0.0005)
-
+forces = system.getForces()
+print "forces: "
+print forces
+BondForce = system.getForce(0)
+PME = system.getForce(2)
+print "####### BondForce Details#######"
+print "Number of Bonds: ", BondForce.getNumBonds()
+print "####### PME Details ############"
+print "Uses switching function: "
+print PME.getUseSwitchingFunction()
+if PME.getUseSwitchingFunction(): print PME.getSwitchingDistance()
+print "Uses dispersion correction: "
+print PME.getUseDispersionCorrection()
+# if PME.getUseDispersionCorrection(): print PME.get
+print "Exception: "
+NUM_EXCEPTIONS = PME.getNumExceptions()
+for i in range(NUM_EXCEPTIONS):
+	excep = PME.getExceptionParameters(i)
+	print excep
+'''
 integrator = mm.VerletIntegrator(2.0*unit.femtoseconds)
 integrator.setConstraintTolerance(0.00001)
 
@@ -38,6 +57,7 @@ simulation.reporters.append(app.StateDataReporter(stdout, 10, step=True,
     speed=True, totalSteps=1000, separator='\t'))
 
 print('Running Production...')
-simulation.step(1000)
+simulation.step(2000)
 print('Done!')
+'''
 
