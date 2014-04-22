@@ -21,7 +21,7 @@ pdb.topology.setUnitCellDimensions((2,2,2))
 forcefield = app.ForceField('tip3p.xml')
 systemTest = forcefield.createSystem(pdb.topology, nonbondedMethod=app.PME, 
     nonbondedCutoff=1.0*unit.nanometers, constraints=app.HBonds, rigidWater=True, 
-    ewaldErrorTolerance=0.0001)
+    ewaldErrorTolerance=0.0005)
 integratorTest = mm.CustomIntegrator(0.002)
 integratorTest.addPerDofVariable("x1", 0)
 integratorTest.addUpdateContextState();
@@ -65,6 +65,8 @@ create a simulation1 object and integrate
 platform = mm.Platform.getPlatformByName('Reference')
 simulationTest = simulation1.Simulation1(pdb.topology, systemTest, integratorTest, platform)
 simulationTest.context.setPositions(pdb.positions)
+print "Energy: ", simulationTest.context.getState(getEnergy=True).getPotentialEnergy()
+sys.exit()
 print('Minimizing...')
 simulationTest.minimizeEnergy()
 print simulationTest.context.getState(getEnergy=True).getPotentialEnergy()
