@@ -6,28 +6,21 @@ from simtk.unit import*
 from pylab import*
 
 epsilon = 8.854187817620E-12*farad/meter
-
 COULOMB_CONSTANT = (AVOGADRO_CONSTANT_NA/(4.0*pi*epsilon)).value_in_unit_system(md_unit_system)
-
 CUTOFF_DIST = 1*nanometer
-
-######### Set system&Integrator #######
+'''
+Setup system and integrator
+'''
 system = mm.System()
-#BOX_LENGTH = 20
-#system.setDefaultPeriodicBoxVectors((BOX_LENGTH, 0, 0), (0, BOX_LENGTH, 0), (0, 0, BOX_LENGTH))
-
-systemGaussian = mm.System()
-#systemGaussian.setDefaultPeriodicBoxVectors((BOX_LENGTH, 0, 0), (0, BOX_LENGTH, 0), (0, 0, BOX_LENGTH))
-
-
+systemTest = mm.System()
 N_PARTICLES = 2
 MASS = 1.0 * atomic_mass_unit   
 CHARGE = [1.0, -1.0] * elementary_charge
 for i in range(N_PARTICLES):
     system.addParticle(MASS)
-    systemGaussian.addParticle(MASS)
+    systemTest.addParticle(MASS)
 integrator = mm.LangevinIntegrator(300, 1.0, 0.002)
-integratorGaussian = mm.LangevinIntegrator(300, 1.0, 0.002)
+integratorTest = mm.LangevinIntegrator(300, 1.0, 0.002)
 ######### PME #########################
 force = mm.NonbondedForce()
 force.setNonbondedMethod(mm.NonbondedForce.PME)
@@ -39,12 +32,10 @@ system.addForce(force)
 ######### Gaussian Potential ##########
 a, b = [1.0/((0.4*nanometer)**2)]*2
 p = sqrt(a * b / (a + b))
-# force.setEwaldErrorTolerance(0.1)
 ERROR_TOL = force.getEwaldErrorTolerance()
 print "ERROR_TOL: ", ERROR_TOL
 ALPHA = sqrt(-log(2*ERROR_TOL))/CUTOFF_DIST
-# forceGaussian = mm.CustomNonbondedForce("COULOMB_CONSTANT * q1 * q2 * erf(p*r) / r")
-forceGaussian = mm.CustomNonbondedForce("COULOMB_CONSTANT * q1 * q2 * (erf(p*r)-erf(ALPHA*r)) / r")
+forceGaussian = mm.CustomNonbondedForce("COULOMB_CONSTANT * q1 * q2 * (erfc(ALPHA*r)) / r")
 forceGaussian.setNonbondedMethod(mm.CustomNonbondedForce.CutoffPeriodic)
 forceGaussian.setCutoffDistance(CUTOFF_DIST)
 
