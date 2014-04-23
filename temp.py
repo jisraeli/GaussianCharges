@@ -16,19 +16,27 @@ forcefield = app.ForceField('tip3p.xml')
 system = forcefield.createSystem(pdb.topology, nonbondedMethod=app.NoCutoff, 
     constraints=app.HBonds, rigidWater=True, 
     ewaldErrorTolerance=0.0005)
+'''
+system = forcefield.createSystem(pdb.topology, nonbondedMethod=app.PME, 
+    nonbondedCutoff = 1.0*unit.nanometers, constraints=app.HBonds, rigidWater=True, 
+    ewaldErrorTolerance=0.0005)
+'''
+PME = system.getForce(2)
+PME.setUseDispersionCorrection(False)
+print "Uses dispersion correciton: ", PME.getUseDispersionCorrection()
+N_PARTICLES = system.getNumParticles()
+
+for i in range(N_PARTICLES):
+    charge ,sigma, epsilon = PME.getParticleParameters(i)
+    PME.setParticleParameters(i, charge, sigma, 0.0)
+
 integrator = mm.VerletIntegrator(2.0*unit.femtoseconds)
 integrator.setConstraintTolerance(0.00001)
 
 platform = mm.Platform.getPlatformByName('Reference')
 simulation = app.Simulation(pdb.topology, system, integrator, platform)
 simulation.context.setPositions(pdb.positions)
-PME = system.getForce(2)
-N_PARTICLES = system.getNumParticles()
-print "Particle parameters: "
-for i in range(N_PARTICLES):
-    charge ,sigma, epsilon = PME.getParticleParameters(i)
-    PME.setParticleParameters(i, 0.0, sigma, epsilon)
-    print PME.getParticleParameters(i)
+
 print "Energy: ", simulation.context.getState(getEnergy=True).getPotentialEnergy()
 sys.exit()
 
