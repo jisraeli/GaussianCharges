@@ -13,7 +13,7 @@ epsilon = 8.854187817620E-12*farad/meter
 COULOMB_CONSTANT = (AVOGADRO_CONSTANT_NA/(4.0*pi*epsilon)).value_in_unit_system(md_unit_system)
 CUTOFF_DIST = 1*nanometer
 
-pdb = app.PDBFile('TwoWaters.pdb')
+pdb = app.PDBFile('OneWater.pdb')
 pdb.topology.setUnitCellDimensions((2,2,2))
 forcefield = app.ForceField('tip3p.xml')
 '''
@@ -61,8 +61,9 @@ forceTest.setNonbondedMethod(mm.CustomNonbondedForce.CutoffPeriodic)
 # forceTest.setNonbondedMethod(mm.CustomNonbondedForce.NoCutoff)
 for i in range(PME.getNumExceptions()):
     Particles = PME.getExceptionParameters(i)[:2]
+    print PME.getExceptionParameters(i)
     forceTest.addExclusion(Particles[0], Particles[1])
-forceTest.setForceGroup(2)
+forceTest.setForceGroup(1)
 forceTest.addGlobalParameter("ALPHA", ALPHA)
 forceTest.addGlobalParameter("COULOMB_CONSTANT", COULOMB_CONSTANT)
 forceTest.addPerParticleParameter("q")
