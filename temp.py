@@ -3,74 +3,59 @@ import numpy as np
 from simtk import openmm as mm
 from simtk.openmm import app
 from simtk.unit import*
+from simtk import unit
 from pylab import*
 from sys import stdout
 import simulation1
+import sys
 
-epsilon = 8.854187817620E-12*farad/meter
-COULOMB_CONSTANT = (AVOGADRO_CONSTANT_NA/(4.0*pi*epsilon)).value_in_unit_system(md_unit_system)
-CUTOFF_DIST = 1*nanometer
+pdb = app.PDBFile('TwoWaters.pdb')
+pdb.topology.setUnitCellDimensions((2,2,2))
+forcefield = app.ForceField('tip3p.xml')
 
-def makeTopology(n_atoms):
-    topology = app.Topology()
-    chain = topology.addChain()
-    residue = topology.addResidue('X', chain)
-    for i in range(n_atoms):
-        topology.addAtom('C', app.element.carbon, residue)
-    return topology
+system = forcefield.createSystem(pdb.topology, nonbondedMethod=app.NoCutoff, 
+    constraints=app.HBonds, rigidWater=True, 
+    ewaldErrorTolerance=0.0005)
 '''
-Set up -  system and integrator
+system = forcefield.createSystem(pdb.topology, nonbondedMethod=app.PME, 
+    nonbondedCutoff = 1.0*unit.nanometers, constraints=app.HBonds, rigidWater=True, 
+    ewaldErrorTolerance=0.0005)
 '''
-system = mm.System()
-N_PARTICLES = 2
-MASS = 1.0 * atomic_mass_unit   
-CHARGE = [1.0, -1.0] * elementary_charge
-for i in range(N_PARTICLES):
-    system.addParticle(MASS)
-
-
-integrator = mm.CustomIntegrator(0.005)
-integrator.addPerDofVariable("x1", 0)
-integrator.addUpdateContextState();
-integrator.addComputePerDof("v", "v+0.5*dt*f1/m")
-integrator.addComputePerDof("x", "x+dt*v")
-integrator.addComputePerDof("x1", "x")
-integrator.addConstrainPositions()
-integrator.addComputePerDof("v", "v+0.5*dt*f1/m+(x-x1)/dt")
-integrator.addConstrainVelocities()
-
-
-'''
-Set up PME reciprocal and Gaussian forces in group 1 and simulate
-'''
-force = mm.NonbondedForce()
-force.setNonbondedMethod(mm.NonbondedForce.PME)
-# force.setForceGroup(1)
-
-force.setReciprocalSpaceForceGroup(1)
-a, b = [1.0/((0.2*nanometer)**2)]*2
-p = sqrt(a * b / (a + b))
-ERROR_TOL = force.getEwaldErrorTolerance()
-ALPHA = sqrt(-log(2*ERROR_TOL))/CUTOFF_DIST
-forceGaussian = mm.CustomNonbondedForce("COULOMB_CONSTANT * q1 * q2 * (erf(p*r)-erf(ALPHA*r)) / r")
-forceGaussian.setNonbondedMethod(mm.CustomNonbondedForce.CutoffPeriodic)
-forceGaussian.addGlobalParameter("p", p)
-forceGaussian.addGlobalParameter("ALPHA", ALPHA)
-forceGaussian.addGlobalParameter("COULOMB_CONSTANT", COULOMB_CONSTANT)
-forceGaussian.addPerParticleParameter("q")
+PME = system.getForce(2)
+PME.setUseDispersionCorrection(False)
+print "Uses dispersion correciton: ", PME.getUseDispersionCorrection()
+N_PARTICLES = system.getNumParticles()
 
 for i in range(N_PARTICLES):
-    force.addParticle(CHARGE[i], 1.0, 0.0)
-    forceGaussian.addParticle([CHARGE[i]])
-system.addForce(force), system.addForce(forceGaussian)
-TwoParticles = np.asarray([[0.5, 0, 0], [1.5, 0, 0]])
-platform = mm.Platform.getPlatformByName('CPU')
-fakeTopology = makeTopology(N_PARTICLES)
-fakeTopology.setUnitCellDimensions((2,2,2))
-simulation = simulation1.Simulation1(fakeTopology, system, integrator, platform)
-simulation.context.setPositions(TwoParticles)
-simulation.context.setVelocities(np.zeros((N_PARTICLES, 3)))
-simulation.reporters.append(app.DCDReporter('trajectory.dcd', 5))
-simulation.reporters.append(app.StateDataReporter(stdout, 10, step=True, kineticEnergy=True, potentialEnergy=True,
-     totalEnergy=True, separator='\t'))
-simulation.step(10000)
+    charge ,sigma, epsilon = PME.getParticleParameters(i)
+    PME.setParticleParameters(i, charge, sigma, 0.0)
+
+integrator = mm.VerletIntegrator(2.0*unit.femtoseconds)
+integrator.setConstraintTolerance(0.00001)
+
+platform = mm.Platform.getPlatformByName('Reference')
+simulation = app.Simulation(pdb.topology, system, integrator, platform)
+simulation.context.setPositions(pdb.positions)
+
+print "Energy: ", simulation.context.getState(getEnergy=True).getPotentialEnergy()
+sys.exit()
+
+
+'''
+print('Minimizing...')
+simulation.minimizeEnergy()
+print simulation.context.getState(getEnergy=True).getPotentialEnergy()
+
+simulation.context.setVelocitiesToTemperature(300*unit.kelvin)
+print('Equilibrating...')
+simulation.step(100)
+
+simulation.reporters.append(app.DCDReporter('CoulombTrajectory.dcd', 2))
+simulation.reporters.append(app.StateDataReporter(stdout, 10, step=True, 
+    potentialEnergy=True, temperature=True, progress=True, remainingTime=True, 
+    speed=True, totalSteps=1000, separator='\t'))
+
+print('Running Production...')
+simulation.step(2000)
+print('Done!')
+'''
