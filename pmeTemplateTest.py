@@ -9,7 +9,7 @@ from sys import stdout
 import simulation1
 import sys
 
-InFile = 'OneWater.pdb'
+InFile = 'TwoWaters.pdb'
 pdb = app.PDBFile(InFile)
 pdb.topology.setUnitCellDimensions((2,2,2))
 forcefield = app.ForceField('tip3p.xml')
@@ -50,6 +50,10 @@ simulationTest = app.Simulation(pdb.topology, systemTest, integratorTest, platfo
 simulationTest.context.setPositions(pdb.positions)
 
 print "Total PME Energy: ", simulationTest.context.getState(getEnergy=True, groups=2).getPotentialEnergy()
+print "Total Forces: " 
+forces = simulationTest.context.getState(getEnergy=True, getForces=True, groups=2).getForces()
+for i in range(len(forces)):
+    print "particle ", i, forces[i] 
 integratorTest = mm.VerletIntegrator(0.002)
 for i in range(len(systemTest.getForces())):
     force = systemTest.getForce(i)
@@ -60,7 +64,11 @@ for i in range(len(systemTest.getForces())):
         force.setForceGroup(2)
 simulationTest = app.Simulation(pdb.topology, systemTest, integratorTest, platform)
 simulationTest.context.setPositions(pdb.positions)
-print "Direct Space PME Energy: ", simulationTest.context.getState(getEnergy=True, groups=2).getPotentialEnergy()
+print "\nDirect Space PME Energy: ", simulationTest.context.getState(getEnergy=True, groups=2).getPotentialEnergy()
+print "\nDirectSpace Forces: " 
+forces = simulationTest.context.getState(getEnergy=True, getForces=True, groups=2).getForces()
+for i in range(len(forces)):
+    print "particle ", i, forces[i]
 integratorTest = mm.VerletIntegrator(0.002)
 for i in range(len(systemTest.getForces())):
     force = systemTest.getForce(i)
@@ -71,4 +79,8 @@ for i in range(len(systemTest.getForces())):
         force.setForceGroup(2)
 simulationTest = app.Simulation(pdb.topology, systemTest, integratorTest, platform)
 simulationTest.context.setPositions(pdb.positions)
-print "Reciprocal Space PME Energy: ", simulationTest.context.getState(getEnergy=True, groups=2).getPotentialEnergy()
+print "\nReciprocal Space PME Energy: ", simulationTest.context.getState(getEnergy=True, groups=2).getPotentialEnergy()
+print "\nDReciprocal Space Forces: " 
+forces = simulationTest.context.getState(getEnergy=True, getForces=True, groups=2).getForces()
+for i in range(len(forces)):
+    print "particle ", i, forces[i]
