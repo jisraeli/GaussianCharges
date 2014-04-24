@@ -81,11 +81,31 @@ print "NonBondedForce direct space PME forces: \n"
 forces = state.getForces()
 for i in range(len(forces)):
     print "particle ", i, forces[i]
-print "CustomNonbondedForce direct space PME forces: \n"
+print "\nCustomNonbondedForce direct space PME forces: \n"
 forcesGaussian = stateGaussian.getForces()
 for i in range(len(forces)):
     print "particle ", i, forcesGaussian[i]
+'''
+OUTPUT
 
+NonBondedForce direct space PME forces: 
+
+particle  0 (-4128.012436599203, -629.1038286508128, 4983.686920328657) kJ/(nm mol)
+particle  1 (4390.637043955369, -622.6467865377982, -702.6080257016945) kJ/(nm mol)
+particle  2 (-291.7663540538207, 1261.5040815367267, -4276.338139005337) kJ/(nm mol)
+particle  3 (1196.6086435239408, -3116.9756081542846, -5517.964565353312) kJ/(nm mol)
+particle  4 (-3542.705659162149, 737.7238459955776, 2465.0381334671633) kJ/(nm mol)
+particle  5 (2375.2387623358622, 2369.4982958105916, 3048.185676264523) kJ/(nm mol)
+
+CustomNonbondedForce direct space PME forces: 
+
+particle  0 (-4128.01245552124, -629.1038315345087, 4983.686943172948) kJ/(nm mol)
+particle  1 (4390.637064081245, -622.6467893918999, -702.6080289223091) kJ/(nm mol)
+particle  2 (-291.7663553912376, 1261.5040873192318, -4276.338158607283) kJ/(nm mol)
+particle  3 (1196.6086490089679, -3116.975622441919, -5517.964590646632) kJ/(nm mol)
+particle  4 (-3542.7056754012674, 737.7238493771617, 2465.038144766437) kJ/(nm mol)
+particle  5 (2375.238773223533, 2369.4983066719337, 3048.1856902368386) kJ/(nm mol)
+'''
 
 
 

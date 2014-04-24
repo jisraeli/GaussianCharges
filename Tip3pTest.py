@@ -96,14 +96,32 @@ wfile = open("TemplateSystem.txt", 'w')
 wfile.write(mm.XmlSerializer.serialize(systemTemp))
 wfile.close()
 
-print "\nNonBondedForce Direct Space PME Forces: " 
+print "\nNonBondedForce Direct Space PME Forces: \n" 
 forces = simulationTemp.context.getState(getEnergy=True, getForces=True, groups=2).getForces()
 for i in range(len(forces)):
     print "particle ", i, forces[i]
 
-print "\nCustomNonBondedForce Direct Space PME Forces: " 
+print "\nCustomNonBondedForce Direct Space PME Forces: \n" 
 forces = simulationCustom.context.getState(getEnergy=True, getForces=True, groups=2).getForces()
 for i in range(len(forces)):
     print "particle ", i, forces[i]
 
+'''
+OUTPUT
 
+NonBondedForce Direct Space PME Forces: 
+particle  0 (-22.709305459133372, 26.97954925345011, -30.759053554131224) kJ/(nm mol)
+particle  1 (-10.310511666994763, -6.259688314276094, 23.51882350862853) kJ/(nm mol)
+particle  2 (3.8780704284737837, -10.966394591058279, 11.980985667127623) kJ/(nm mol)
+particle  3 (54.4543816221644, -3.7010536100475804, 28.940374738738324) kJ/(nm mol)
+particle  4 (-5.216419237506585, -9.99127057596625, -24.067745799572055) kJ/(nm mol)
+particle  5 (-20.096215687003458, 3.938857837898105, -9.613384560791182) kJ/(nm mol)
+
+CustomNonBondedForce Direct Space PME Forces: 
+particle  0 (-69.73759608537662, 19.356122167791845, 27.06323194271893) kJ/(nm mol)
+particle  1 (15.156999250665127, -3.2352719838242994, -3.9047738860232766) kJ/(nm mol)
+particle  2 (25.438850003478343, -6.367383791144251, -18.417702413340155) kJ/(nm mol)
+particle  3 (69.65131524300209, -39.291716675119716, -35.23000053289787) kJ/(nm mol)
+particle  4 (-15.335964738338324, 7.137110106040673, 7.809693598358306) kJ/(nm mol)
+particle  5 (-25.173603673430613, 22.40114017625575, 22.679551291184058) kJ/(nm mol)
+'''
