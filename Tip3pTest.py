@@ -61,8 +61,9 @@ introduce PME direct space through customNonBondedForce into systemCustom
 '''
 ERROR_TOL = pmeCustom.getEwaldErrorTolerance()
 ALPHA = sqrt(-log(2*ERROR_TOL))/CUTOFF_DIST
-forceCustom = mm.CustomNonbondedForce("COULOMB_CONSTANT*q1*q2*erfc(ALPHA*r)/r + 4*epsilon*((sigma/r)^12-(sigma/r)^6); sigma=0.5*(sigma1+sigma2); epsilon=sqrt(epsilon1*epsilon2)")
-forceCustom.setNonbondedMethod(mm.CustomNonbondedForce.CutoffPeriodic)
+# forceCustom = mm.CustomNonbondedForce("COULOMB_CONSTANT*q1*q2*erfc(ALPHA*r)/r + 4*epsilon*((sigma/r)^12-(sigma/r)^6); sigma=0.5*(sigma1+sigma2); epsilon=sqrt(epsilon1*epsilon2)")
+# forceCustom.setNonbondedMethod(mm.CustomNonbondedForce.CutoffPeriodic)
+forceCustom = mm.CustomBondForce("COULOMB_CONSTANT*Q*erfc(ALPHA*r)/r")
 '''
 copy exceptions from TIP3P into forceCustom as exclusions(exceptions not available)
 '''
@@ -72,12 +73,21 @@ for i in range(pmeTemp.getNumExceptions()):
 forceCustom.setForceGroup(1)
 forceCustom.addGlobalParameter("ALPHA", ALPHA)
 forceCustom.addGlobalParameter("COULOMB_CONSTANT", COULOMB_CONSTANT)
+'''
+ADD particle parameters and particles for CustomNonBonded
 forceCustom.addPerParticleParameter("q")
 forceCustom.addPerParticleParameter("sigma")
 forceCustom.addPerParticleParameter("epsilon")
 for i in range(N_PARTICLES):
     charge ,sigma, epsilon = pmeCustom.getParticleParameters(i)
     forceCustom.addParticle([charge, sigma, 0.0])
+'''
+forceCustom.addPerBondParameter("Q")
+for i in range(N_PARTICLES):
+    for j in range(i+1, N_PARTICLES):
+        chargeI ,sigmaI, epsilonI = pmeCustom.getParticleParameters(i)
+        chargeJ ,sigmaJ, epsilonJ = pmeCustom.getParticleParameters(i)
+        forceCustom.addParticle([i, j, chargeI*chargeJ])
 systemCustom.addForce(forceCustom)
 
 platformTemp = mm.Platform.getPlatformByName('Reference')
