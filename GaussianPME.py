@@ -13,14 +13,14 @@ epsilon = 8.854187817620E-12*farad/meter
 COULOMB_CONSTANT = (AVOGADRO_CONSTANT_NA/(4.0*pi*epsilon)).value_in_unit_system(md_unit_system)
 CUTOFF_DIST = 1*nanometer
 
-InFile = 'TwoWaters.pdb'
+InFile = 'WaterBox.pdb'
 pdb = app.PDBFile(InFile)
 pdb.topology.setUnitCellDimensions((2,2,2))
 forcefield = app.ForceField('tip3p.xml')
 '''
 setup system:
 move all forces but PME_direct to group 1
-move move PME_direct to group 2
+move PME_direct to group 2
 '''
 system = forcefield.createSystem(pdb.topology, nonbondedMethod=app.PME, 
     nonbondedCutoff=1.0*nanometers, constraints=app.HBonds, rigidWater=True, 
@@ -38,32 +38,56 @@ integrator = mm.VerletIntegrator(0.002)
 '''
 add GaussianPME_DirectSpace and LJ through customNonBondedForce in group1
 '''
-forceCustom = mm.CustomNonbondedForce("COULOMB_CONSTANT*q1*q2*(erfc(ALPHA*r))/r + 4*epsilon*((sigma/r)^12-(sigma/r)^6); sigma=0.5*(sigma1+sigma2); epsilon=sqrt(epsilon1*epsilon2)")
-forceCustom.setNonbondedMethod(mm.CustomNonbondedForce.CutoffPeriodic)
-forceCustom.setForceGroup(1)
-
-a, b = [1.0/((0.2*nanometer)**2)]*2
+forceCustomNonBonded = mm.CustomNonbondedForce("COULOMB_CONSTANT*q1*q2*(erf(p*r)-erf(ALPHA*r))/r + 4*epsilon*((sigma/r)^12-(sigma/r)^6); sigma=0.5*(sigma1+sigma2); epsilon=sqrt(epsilon1*epsilon2)")
+forceCustomNonBonded.setNonbondedMethod(mm.CustomNonbondedForce.CutoffPeriodic)
+forceCustomNonBonded.setForceGroup(1)
+a, b = [1.0/((0.01*nanometer)**2)]*2
 p = sqrt(a * b / (a + b))
-ERROR_TOL = pmeCustom.getEwaldErrorTolerance()
+ERROR_TOL = PME.getEwaldErrorTolerance()
 ALPHA = sqrt(-log(2*ERROR_TOL))/CUTOFF_DIST
-
-forceCustom.addGlobalParameter("ALPHA", ALPHA)
-forceCustom.addGlobalParameter("COULOMB_CONSTANT", COULOMB_CONSTANT)
-forceCustom.addPerParticleParameter("q")
-forceCustom.addPerParticleParameter("sigma")
-forceCustom.addPerParticleParameter("epsilon")
+forceCustomNonBonded.addGlobalParameter("ALPHA", ALPHA)
+forceCustomNonBonded.addGlobalParameter("p", p)
+forceCustomNonBonded.addGlobalParameter("COULOMB_CONSTANT", COULOMB_CONSTANT)
+forceCustomNonBonded.addPerParticleParameter("q")
+forceCustomNonBonded.addPerParticleParameter("sigma")
+forceCustomNonBonded.addPerParticleParameter("epsilon")
 for i in range(N_PARTICLES):
     params = PME.getParticleParameters(i)
-    forceCustom.addParticle(params)
+    forceCustomNonBonded.addParticle(params)
 '''
-TODO: copy exceptions from TIP3P(temporary code below is wrong!)
-
-for i in range(pmeTemp.getNumExceptions()):
-    Q1, Q2, QProd = pmeCustom.getExceptionParameters(i)[:3]
-    forceCustom.addExclusion(Q1, Q2)
+add exceptions for direct space and LJ
 '''
-system.addForce(forceCustom)
+for i in range(PME.getNumExceptions()):
+    Q1, Q2, QProd = PME.getExceptionParameters(i)[:3]
+    forceCustomNonBonded.addExclusion(Q1, Q2)
+system.addForce(forceCustomNonBonded)
+'''
+add reciprocal space exceptions through customBondForce in group1
+'''
+forceCustomBond = mm.CustomBondForce("-COULOMB_CONSTANT*Q*erf(ALPHA*r)/r")
+forceCustomBond.setForceGroup(1)
+forceCustomBond.addGlobalParameter("ALPHA", ALPHA)
+forceCustomBond.addGlobalParameter("COULOMB_CONSTANT", COULOMB_CONSTANT)
+forceCustomBond.addPerBondParameter("Q")
+'''
+get list of particle pairs in exceptions
+add bonds for those pairs
+'''
+ExceptionPairs = []
+for i in range(PME.getNumExceptions()):
+    Q1, Q2, QProd = PME.getExceptionParameters(i)[:3]
+    ExceptionPairs.append([Q1, Q2])
 
+for i in range(N_PARTICLES):
+    for j in range(i+1, N_PARTICLES):
+        if [i, j] in ExceptionPairs:
+            Q1 ,sigma1, epsilon1 = PME.getParticleParameters(i)
+            Q2 ,sigma2, epsilon2 = PME.getParticleParameters(j)
+            forceCustomBond.addBond(i, j, [Q1*Q2])
+system.addForce(forceCustomBond)
+'''
+create simulation1 object and integrate
+'''
 platform = mm.Platform.getPlatformByName('Reference')
 simulation = simulation1.Simulation1(pdb.topology, system, integrator, platform)
 simulation.context.setPositions(pdb.positions)
@@ -78,12 +102,12 @@ print('Equilibrating...')
 simulation.step(100)
 '''
 simulation.reporters.append(app.DCDReporter('GaussianTraj.dcd', 5))
-simulation.reporters.append(app.StateDataReporter(stdout, 1000, step=True, 
+simulation.reporters.append(app.StateDataReporter(stdout, 10, step=True, 
     potentialEnergy=True, temperature=True, progress=True, remainingTime=True, 
     speed=True, totalSteps=1000, separator='\t'))
 
 print('Running Production...')
-simulation.step(1000)
+simulation.step(2000)
 print('Done!')
 
 
