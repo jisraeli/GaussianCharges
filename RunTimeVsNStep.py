@@ -24,6 +24,7 @@ setup system:
 move all forces but PME_direct to group 1
 move PME_direct to group 2
 '''
+print("Creating Gaussin System...")
 system = forcefield.createSystem(pdb.topology, nonbondedMethod=app.PME, 
     nonbondedCutoff=1.0*nanometers, constraints=app.HBonds, rigidWater=True, 
     ewaldErrorTolerance=0.0005)
@@ -94,24 +95,12 @@ create simulation1 object and integrate
 platform = mm.Platform.getPlatformByName('Reference')
 simulation = simulation1.Simulation1(pdb.topology, system, integrator, platform)
 simulation.context.setPositions(pdb.positions)
-
 print('Minimizing...')
 simulation.minimizeEnergy()
-
 simulation.context.setVelocitiesToTemperature(300*unit.kelvin)
-'''
-TODO: add dispersion correction and thermostat for equilibration
-print('Equilibrating...')
-simulation.step(100)
-'''
-print('Running Production...')
-GaussianStartTime = time.time()
-simulation.step(10000)
-GaussianEndTime = time.time()
-print('Done!')
 
-print('Now computing reference system...')
 
+print("Creating Reference System...")
 ReferenceSystem = forcefield.createSystem(pdb.topology, nonbondedMethod=app.PME, 
     nonbondedCutoff=1.0*nanometers, constraints=app.HBonds, rigidWater=True, 
     ewaldErrorTolerance=0.0005)
@@ -119,18 +108,34 @@ integrator = mm.VerletIntegrator(0.002)
 platform = mm.Platform.getPlatformByName('Reference')
 RefernceSimulation = app.Simulation(pdb.topology, ReferenceSystem, integrator, platform)
 RefernceSimulation.context.setPositions(pdb.positions)
-
 print('Minimizing...')
 RefernceSimulation.minimizeEnergy()
-print('Running Production...')
-ReferenceStartTime = time.time()
-RefernceSimulation.step(10000)
-ReferenceEndTime = time.time()
-print('Done!')
+RefernceSimulation.context.setVelocitiesToTemperature(300*unit.kelvin)
+print('Running simulations...')
+print('\nSTEPS GaussianTime ReferenceTime')
+TimeList = []
+GaussinRunTimeList = []
+ReferenceRunTimeList = []
+for STEPS in [100, 316, 1000, 3160, 10000, 31600, 100000, 316000, 1000000]:
+    STEPS = int(STEPS)
+    GaussianStartTime = time.time()
+    simulation.step(STEPS)
+    GaussianEndTime = time.time()
+    ReferenceStartTime = time.time()
+    RefernceSimulation.step(STEPS)
+    ReferenceEndTime = time.time()
+    GaussinRunTime = GaussianEndTime - GaussianStartTime
+    GaussinRunTimeList.append(GaussinRunTime)
+    ReferenceRunTime = ReferenceEndTime - ReferenceStartTime
+    ReferenceRunTimeList.append(ReferenceRunTime)
+    TimeList.append(STEPS)
+    print '\n'
+    print STEPS, GaussinRunTime, ReferenceRunTime
 
-print "Gaussian system run time: ", (GaussianEndTime - GaussianStartTime)
-print "Reference system run time: ", (ReferenceEndTime - ReferenceStartTime)
-
-print('Running Production...')
-simulation.step(1000)
-print('Done!')
+plot(TimeList, GaussinRunTimeList, label="Gaussian")
+plot(TimeList, ReferenceRunTimeList, label="Reference")
+legend(loc=4)
+xlabel("# Integration Steps")
+ylabel("Run Time")
+title("TwoWaters RunTime Test: Gaussian vs. Reference PME")
+show()
