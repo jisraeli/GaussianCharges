@@ -40,6 +40,7 @@ add GaussianPME_DirectSpace and LJ through customNonBondedForce in group1
 '''
 forceCustomNonBonded = mm.CustomNonbondedForce("COULOMB_CONSTANT*q1*q2*(erf(p*r)-erf(ALPHA*r))/r + 4*epsilon*((sigma/r)^12-(sigma/r)^6); sigma=0.5*(sigma1+sigma2); epsilon=sqrt(epsilon1*epsilon2)")
 forceCustomNonBonded.setNonbondedMethod(mm.CustomNonbondedForce.CutoffPeriodic)
+forceCustomNonBonded.setUseLongRangeCorrection(True)
 forceCustomNonBonded.setForceGroup(1)
 a, b = [1.0/((0.01*nanometer)**2)]*2
 p = sqrt(a * b / (a + b))
