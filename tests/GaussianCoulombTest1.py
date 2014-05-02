@@ -12,7 +12,7 @@ import sys
 epsilon = 8.854187817620E-12*farad/meter
 COULOMB_CONSTANT = (AVOGADRO_CONSTANT_NA/(4.0*pi*epsilon)).value_in_unit_system(md_unit_system)
 CUTOFF_DIST = 1*nanometer
-InFile = 'WaterBox.pdb'
+InFile = '../examples/WaterBox.pdb'
 pdb = app.PDBFile(InFile)
 pdb.topology.setUnitCellDimensions((2,2,2))
 forcefield = app.ForceField('tip3p.xml')
@@ -150,12 +150,12 @@ for width in WidthList:
         print "problematic width: ", width 
     
 
-plot(Widths, EnergyDiffList, label="Energy Difference")
-plot(Widths, AvgForceDiffList, label="Median Per-Particle Force Difference")
-legend(loc=4)
+plot(Widths, EnergyDiffList, label="Initial Energy")
+plot(Widths, AvgForceDiffList, label="Initial Median Force")
+legend(loc=2)
 xlabel("Gaussian Width (nm)")
-ylabel("Relative Difference")
-title("Point charges vs Gaussian Charges")
+ylabel("|1 - Gaussian/Refernece| ")
+title("200 Particle System: Energy&Force Deviations vs. Particle Width")
 show()
 
 
