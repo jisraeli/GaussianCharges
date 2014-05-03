@@ -13,9 +13,9 @@ epsilon = 8.854187817620E-12*farad/meter
 COULOMB_CONSTANT = (AVOGADRO_CONSTANT_NA/(4.0*pi*epsilon)).value_in_unit_system(md_unit_system)
 CUTOFF_DIST = 1*nanometer
 
-InFile = 'WaterBox.pdb'
+InFile = './examples/WaterBox.pdb'
 pdb = app.PDBFile(InFile)
-pdb.topology.setUnitCellDimensions((2,2,2))
+pdb.topology.setUnitCellDimensions((3,3,3))
 forcefield = app.ForceField('tip3p.xml')
 '''
 setup system:
@@ -34,7 +34,14 @@ for force in system.getForces():
         force.setReciprocalSpaceForceGroup(1)
     else: 
         force.setForceGroup(1)
-integrator = mm.VerletIntegrator(0.002)
+integrator = mm.VerletIntegrator(0.001)
+integrator.setConstraintTolerance(0.00001)
+thermostat = mm.AndersenThermostat(298.15*unit.kelvin, 1.0/unit.picosecond)
+thermostat.setForceGroup(1)
+barostat = mm.MonteCarloBarostat(1*unit.atmospheres, 298.15*unit.kelvin, 25)
+barostat.setForceGroup(1)
+system.addForce(thermostat)
+system.addForce(barostat)
 '''
 add GaussianPME_DirectSpace and LJ through customNonBondedForce in group1
 '''
@@ -96,19 +103,18 @@ simulation.context.setPositions(pdb.positions)
 print('Minimizing...')
 simulation.minimizeEnergy()
 
-simulation.context.setVelocitiesToTemperature(300*unit.kelvin)
-'''
-TODO: add dispersion correction and thermostat for equilibration
+simulation.context.setVelocitiesToTemperature(298.15*unit.kelvin)
 print('Equilibrating...')
 simulation.step(100)
-'''
+
 simulation.reporters.append(app.DCDReporter('GaussianTraj.dcd', 5))
-simulation.reporters.append(app.StateDataReporter(stdout, 10, step=True, 
-    potentialEnergy=True, temperature=True, progress=True, remainingTime=True, 
-    speed=True, totalSteps=1000, separator='\t'))
+simulation.reporters.append(app.StateDataReporter('output.csv', 10, step=True, 
+    potentialEnergy=True, temperature=True, progress=True, remainingTime=True,
+    density=True, speed=True, totalSteps=2000, separator='\t'))
 
 print('Running Production...')
 simulation.step(2000)
 print('Done!')
+print('Calculating che')
 
 
