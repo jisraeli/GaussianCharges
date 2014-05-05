@@ -15,7 +15,7 @@ CUTOFF_DIST = 1*nanometer
 
 InFile = './examples/WaterBox.pdb'
 pdb = app.PDBFile(InFile)
-pdb.topology.setUnitCellDimensions((3,3,3))
+pdb.topology.setUnitCellDimensions((2.48,2.48,2.48))
 forcefield = app.ForceField('tip3p.xml')
 '''
 setup system:
@@ -36,7 +36,7 @@ for force in system.getForces():
         force.setForceGroup(1)
 integrator = mm.VerletIntegrator(0.001)
 integrator.setConstraintTolerance(0.00001)
-thermostat = mm.AndersenThermostat(298.15*unit.kelvin, 1.0/unit.picosecond)
+thermostat = mm.AndersenThermostat(298.15*unit.kelvin, 1.0/(2.0*unit.picosecond))
 thermostat.setForceGroup(1)
 barostat = mm.MonteCarloBarostat(1*unit.atmospheres, 298.15*unit.kelvin, 25)
 barostat.setForceGroup(1)
@@ -105,16 +105,20 @@ simulation.minimizeEnergy()
 
 simulation.context.setVelocitiesToTemperature(298.15*unit.kelvin)
 print('Equilibrating...')
-simulation.step(100)
+simulation.step(100000)
 
-simulation.reporters.append(app.DCDReporter('GaussianTraj.dcd', 5))
-simulation.reporters.append(app.StateDataReporter('output.csv', 10, step=True, 
-    potentialEnergy=True, temperature=True, progress=True, remainingTime=True,
-    density=True, speed=True, totalSteps=2000, separator='\t'))
+simulation.reporters.append(app.DCDReporter('GaussianTraj.dcd', 100))
+simulation.reporters.append(app.StateDataReporter('Gaussian.csv', 100, step=True, 
+    potentialEnergy=True, kineticEnergy=True, totalEnergy=True, temperature=True, 
+    progress=True, remainingTime=True, density=True, speed=True, 
+    totalSteps=5000000, separator='\t'))
+simulation.reporters.append(app.StateDataReporter(stdout, 100, step=True, 
+    totalEnergy=True, temperature=True, progress=True, remainingTime=True,
+    speed=True, totalSteps=5000000, separator='\t'))
 
 print('Running Production...')
-simulation.step(2000)
+simulation.step(5000000)
 print('Done!')
-print('Calculating che')
+
 
 

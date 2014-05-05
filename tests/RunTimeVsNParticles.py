@@ -14,14 +14,14 @@ epsilon = 8.854187817620E-12*farad/meter
 COULOMB_CONSTANT = (AVOGADRO_CONSTANT_NA/(4.0*pi*epsilon)).value_in_unit_system(md_unit_system)
 CUTOFF_DIST = 1*nanometer
 
-def CreateGaussianSimulation(InFile, GaussianWidth, Gaussian):
+def CreateGaussianSimulation(InFile, size, GaussianWidth, Gaussian):
     '''
     setup system:
     move all forces but PME_direct to group 1
     move PME_direct to group 2
     '''
     pdb = app.PDBFile(InFile)
-    pdb.topology.setUnitCellDimensions((2,2,2))
+    pdb.topology.setUnitCellDimensions((size,size,size))
     forcefield = app.ForceField('tip3p.xml')
 
     system = forcefield.createSystem(pdb.topology, nonbondedMethod=app.PME, 
@@ -30,8 +30,13 @@ def CreateGaussianSimulation(InFile, GaussianWidth, Gaussian):
     if not Gaussian:
         PME = system.getForce(2)
         N_PARTICLES = system.getNumParticles()
-        integrator = mm.VerletIntegrator(0.002)
-        platform = mm.Platform.getPlatformByName('Reference')
+        integrator = mm.VerletIntegrator(0.001)
+        integrator.setConstraintTolerance(0.00001)
+        thermostat = mm.AndersenThermostat(298.15*unit.kelvin, 1.0/(2.0*unit.picosecond))
+        barostat = mm.MonteCarloBarostat(1*unit.atmospheres, 298.15*unit.kelvin, 25)
+        system.addForce(thermostat)
+        system.addForce(barostat)
+        platform = mm.Platform.getPlatformByName('CPU')
         simulation = app.Simulation(pdb.topology, system, integrator, platform)
         simulation.context.setPositions(pdb.positions)
         simulation.minimizeEnergy()
@@ -45,7 +50,14 @@ def CreateGaussianSimulation(InFile, GaussianWidth, Gaussian):
             force.setReciprocalSpaceForceGroup(1)
         else: 
             force.setForceGroup(1)
-    integrator = mm.VerletIntegrator(0.002)
+    integrator = mm.VerletIntegrator(0.001)
+    integrator.setConstraintTolerance(0.00001)
+    thermostat = mm.AndersenThermostat(298.15*unit.kelvin, 1.0/(2.0*unit.picosecond))
+    thermostat.setForceGroup(1)
+    barostat = mm.MonteCarloBarostat(1*unit.atmospheres, 298.15*unit.kelvin, 25)
+    barostat.setForceGroup(1)
+    system.addForce(thermostat)
+    system.addForce(barostat)
     '''
     add GaussianPME_DirectSpace and LJ through customNonBondedForce in group1
     '''
@@ -100,14 +112,14 @@ def CreateGaussianSimulation(InFile, GaussianWidth, Gaussian):
     '''
     create simulation1 object and integrate
     '''
-    platform = mm.Platform.getPlatformByName('Reference')
+    platform = mm.Platform.getPlatformByName('CPU')
     simulation = simulation1.Simulation1(pdb.topology, system, integrator, platform)
     simulation.context.setPositions(pdb.positions)
     simulation.minimizeEnergy()
     simulation.context.setVelocitiesToTemperature(300*unit.kelvin)
     return [simulation, N_PARTICLES]
 
-BoxSizeList = np.linspace(1.2, 2.5, 14)
+BoxSizeList = np.linspace(2.1, 2.5, 5)
 GaussianWidth = 0.2
 ParticleNumberList = []
 GaussianRunTimeList = []
@@ -117,7 +129,7 @@ STEPS = 100
 print('\n#Particles <GaussianTime> <ReferenceTime> <Ratio>')
 for size in BoxSizeList:
     InFile = '../examples/' + (str(size)+'_')*3 + 'WaterBox.pdb'
-    [simulation, N_PARTICLES] = CreateGaussianSimulation(InFile, GaussianWidth, Gaussian=True)
+    [simulation, N_PARTICLES] = CreateGaussianSimulation(InFile, size, GaussianWidth, Gaussian=True)
     ParticleNumberList.append([N_PARTICLES])
     total = 0
     for i in range(3):
@@ -126,7 +138,7 @@ for size in BoxSizeList:
         GaussianEndTime = time.time()
         total += GaussianEndTime - GaussianStartTime
     GaussianRunTime = total/3
-    [ReferenceSimulation, _] = CreateGaussianSimulation(InFile, GaussianWidth, Gaussian=False)
+    [ReferenceSimulation, _] = CreateGaussianSimulation(InFile, size, GaussianWidth, Gaussian=False)
     total = 0
     for i in range(3):
         ReferenceStartTime = time.time()
@@ -142,13 +154,13 @@ for size in BoxSizeList:
     column3 = np.asarray(ReferenceRunTimeList)
     column4 = np.asarray(RatioList)
     data = np.hstack((column1, column2, column3, column4))
-    np.savetxt('RunTimeVsNParticles.txt', data, header="Steps <GaussianRunTime> <ReferenceRunTime> Ratio")
+    np.savetxt('RunTimeVsNParticles_CPU.txt', data, header="Steps <GaussianRunTime> <ReferenceRunTime> Ratio")
     print N_PARTICLES, GaussianRunTime, ReferenceRunTime, GaussianRunTime/ReferenceRunTime
 
 plot(ParticleNumberList, RatioList)
 xlabel("# of Particles")
 ylabel("Gaussian Run Time / Reference PME RunTime")
-title("100 Integrator Steps RunTime Comparison")
+title("100 Integrator Steps RunTime Comparison (CPU)")
 show()
 '''
 OUTPUT for STEPS=100:
