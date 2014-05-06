@@ -7,4 +7,6 @@ Based on that observation, I develop a water model with gaussian charge interact
 
 The development is done with the OpenMM  toolkit for molecular simulation, which can be downloaded at https://simtk.org/home/openmm
 
-The water model is still going through  preliminary testing. Once validated, a basic implementation will become available on here.
+GaussianPME.py simulates water with gaussian charges using OpenMM's Reference and CPU platforms. Note: on a linux machine it may run as much as 100 times slower than an equivalent water model using PME on the CPU platform.
+
+FastGaussianPME.py is an optimized version of GaussianPME.py and it can be implemented on any platform. For large water systems (>1000 particles), it can run as much as 100 times faster than GaussianPME.py
