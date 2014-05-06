@@ -56,7 +56,7 @@ system.addForce(forceCustomNonBonded)
 create simulation object and integrate
 '''
 platform = mm.Platform.getPlatformByName('OpenCL')
-simulation = app.simulation(pdb.topology, system, integrator, platform)
+simulation = app.Simulation(pdb.topology, system, integrator, platform)
 simulation.context.setPositions(pdb.positions)
 
 print('Minimizing...')
