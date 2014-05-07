@@ -48,13 +48,17 @@ temp = data[cols[5]]
 tempGaussian= dataGaussian[cols[5]]
 
 IC = (avg(volume2)-avg(volume)**2)*(VOL_unit**2)/(kB*avg(temp)*TEMP_unit*avg(volume)*VOL_unit)
+IC = IC / AVOGADRO_CONSTANT_NA
 
 print "TIP3P results: "
 print "\tAverage Density: ", avg(density)*density_unit
 print "\tAverage PE per molecule: ", avg(PE)/(N_PARTICLES/3.0)*PE_unit
-print "\tIsothermal Compressibility: ", IC.in_unit_system(md_unit_system)
+print "\tIsothermal Compressibility (1E-6): ", 1E6*IC.in_units_of(atmosphere**-1)
+
+IC_Gaussian = (avg(volume2Gaussian)-avg(volumeGaussian)**2)*(VOL_unit**2)/(kB*avg(tempGaussian)*TEMP_unit*avg(volumeGaussian)*VOL_unit)
+IC_Gaussian = IC_Gaussian / AVOGADRO_CONSTANT_NA
 
 print "GaussianCharges results:"
 print "\tAverage Gaussian Density: ", avg(densityGaussian)
 print "\tAverage PE per molecule: ", avg(PE_Gaussian)/(N_PARTICLES/3.0)
-print "\tIsothermal Compressibility: ", (avg(volume2Gaussian)-avg(volumeGaussian)**2)/(kB*avg(tempGaussian)*avg(volumeGaussian)) 
+print "\tIsothermal Compressibility (1E-6): ", 1E6*IC_Gaussian.in_units_of(atmosphere**-1)
