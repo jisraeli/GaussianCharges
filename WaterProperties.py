@@ -22,14 +22,24 @@ system = forcefield.createSystem(pdb.topology, nonbondedMethod=app.PME,
     ewaldErrorTolerance=0.0005)
 
 N_PARTICLES = system.getNumParticles()
+MASS = []
+for i in range(N_PARTICLES):
+    MASS.append(system.getParticleMass(i))
+MASS = sum(MASS)
+MASS_unit = MASS.unit
+MASS = MASS.value_in_unit_system(md_unit_system)
+density_unit = grams/milliliters
+VOL_unit = MASS_unit/density_unit
+PE_unit = kilojoules/mole
+TEMP_unit = kelvin
 
 data = pd.read_csv('Reference.csv', sep='\t')
 dataGaussian = pd.read_csv('Gaussian.csv', sep='\t')
 cols = list(data.columns.values)
 density = data[cols[6]]
 densityGaussian = dataGaussian[cols[6]]
-volume = N_PARTICLES/density
-volumeGaussian = N_PARTICLES/densityGaussian
+volume = MASS/density
+volumeGaussian = MASS/densityGaussian
 volume2 = volume**2
 volume2Gaussian = volumeGaussian**2
 PE = data[cols[2]]
@@ -37,10 +47,12 @@ PE_Gaussian = dataGaussian[cols[2]]
 temp = data[cols[5]]
 tempGaussian= dataGaussian[cols[5]]
 
+IC = (avg(volume2)-avg(volume)**2)*(VOL_unit**2)/(kB*avg(temp)*TEMP_unit*avg(volume)*VOL_unit)
+
 print "TIP3P results: "
-print "\tAverage Density: ", avg(density)
-print "\tAverage PE per molecule: ", avg(PE)/(N_PARTICLES/3.0)
-print "\tIsothermal Compressibility: ", (avg(volume2)-avg(volume)**2)/(kB*avg(temp)*avg(volume))
+print "\tAverage Density: ", avg(density)*density_unit
+print "\tAverage PE per molecule: ", avg(PE)/(N_PARTICLES/3.0)*PE_unit
+print "\tIsothermal Compressibility: ", IC.in_unit_system(md_unit_system)
 
 print "GaussianCharges results:"
 print "\tAverage Gaussian Density: ", avg(densityGaussian)
