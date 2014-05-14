@@ -6,7 +6,9 @@ from simtk.unit import*
 from simtk import unit
 from pylab import*
 from sys import stdout
-from simtk.openmm.app import XmlSerializer
+from simtk.openmm import openmm
+from simtk.openmm.openmm import XmlSerializer__serializeForce 
+from simtk.openmm.openmm import XmlSerializer
 import sys
 
 epsilon = 8.854187817620E-12*farad/meter
@@ -55,4 +57,8 @@ system.addForce(forceCustomNonBonded)
 '''
 Serialize forceCustomNonBonded
 '''
-Serialize(forceCustomNonBonded)
+wfile = open('GaussianSystem.xml', 'w')
+# ser = XmlSerializer__serializeForce(forceCustomNonBonded)
+ser = XmlSerializer.serialize(system)
+wfile.write(ser)
+wfile.close()
