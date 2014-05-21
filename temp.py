@@ -22,7 +22,6 @@ InFile = './examples/WaterBox.pdb'
 pdb = app.PDBFile(InFile)
 pdb.topology.setUnitCellDimensions((2.48,2.48,2.48))
 forcefield = app.ForceField('/Users/jisraeli/Desktop/GaussianCharges/tip3pGaussian.xml')
-#forcefield = app.ForceField('/Users/jisraeli/Desktop/GaussianCharges/tip3p.xml')
 
 '''
 setup system
