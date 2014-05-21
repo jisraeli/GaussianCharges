@@ -47,11 +47,9 @@ forceCustomNonBonded.addGlobalParameter("p", p)
 forceCustomNonBonded.addGlobalParameter("COULOMB_CONSTANT", COULOMB_CONSTANT)
 forceCustomNonBonded.addPerParticleParameter("q")
 for i in range(N_PARTICLES):
-    print 'LOOP 1'
     params = PME.getParticleParameters(i)[0]
     forceCustomNonBonded.addParticle([params])
 for i in range(PME.getNumExceptions()):
-    print 'LOOP 2'
     Q1, Q2, QProd = PME.getExceptionParameters(i)[:3]
     forceCustomNonBonded.addExclusion(Q1, Q2)
 sys.addForce(forceCustomNonBonded)
