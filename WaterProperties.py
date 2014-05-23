@@ -1,17 +1,14 @@
 import pandas as pd
-import numpy as np
 from numpy import average as avg
 from math import*
-from simtk import openmm as mm
 from simtk.openmm import app
 from simtk.unit import*
-from simtk import unit
 
 epsilon = 8.854187817620E-12*farad/meter
 COULOMB_CONSTANT = (AVOGADRO_CONSTANT_NA/(4.0*pi*epsilon)).value_in_unit_system(md_unit_system)
 MU_GAS = 1.854989
 ALPHA_GAS = 1.6633E-40
-kB = BOLTZMANN_CONSTANT_kB 
+kB = BOLTZMANN_CONSTANT_kB
 
 InFile = './examples/WaterBox.pdb'
 pdb = app.PDBFile(InFile)
@@ -33,7 +30,7 @@ VOL_unit = MASS_unit/density_unit
 PE_unit = kilojoules/mole
 TEMP_unit = kelvin
 
-data = pd.read_csv('./Data/Reference.csv', sep='\t')
+data = pd.read_csv('./Data/test2_0.01.csv', sep='\t')
 cols = list(data.columns.values)
 density = data[cols[6]]
 volume = MASS/density
@@ -43,13 +40,15 @@ temp = data[cols[5]]
 IC = (avg(volume2)-avg(volume)**2)*(VOL_unit**2)/(kB*avg(temp)*TEMP_unit*avg(volume)*VOL_unit)
 IC = IC / AVOGADRO_CONSTANT_NA
 
-wfile = open('WaterProperties.txt', 'w')
+wfile = open('test2.txt', 'w')
 wfile.write("TIP3P results: \n")
 wfile.write("\n\tAverage Density: "+str(avg(density)*density_unit))
-wfile.write("\n\tAverage PE per molecule: "+str(avg(PE)/(N_PARTICLES/3.0)*PE_unit))
-wfile.write("\n\tIsothermal Compressibility (1E-6): "+str(1E6*IC.in_units_of(atmosphere**-1))+'\n')
+wfile.write("\n\tAverage PE per molecule: "+
+            str(avg(PE)/(N_PARTICLES/3.0)*PE_unit))
+wfile.write("\n\tIsothermal Compressibility (1E-6): "+
+            str(1E6*IC.in_units_of(atmosphere**-1))+'\n')
 
-
+'''
 fileGaussian = './Data/Gaussian_'
 width_List = [0.01, 0.1, 0.15]
 for width in width_List:
@@ -59,11 +58,14 @@ for width in width_List:
     volume2Gaussian = volumeGaussian**2
     PE_Gaussian = dataGaussian[cols[2]]
     tempGaussian= dataGaussian[cols[5]]
-    IC_Gaussian = (avg(volume2Gaussian)-avg(volumeGaussian)**2)*(VOL_unit**2)/(kB*avg(tempGaussian)*TEMP_unit*avg(volumeGaussian)*VOL_unit)
+    IC_Gaussian = (avg(volume2Gaussian)-avg(volumeGaussian)**2)*(VOL_unit**2)/
+                  (kB*avg(tempGaussian)*TEMP_unit*avg(volumeGaussian)*VOL_unit)
     IC_Gaussian = IC_Gaussian / AVOGADRO_CONSTANT_NA
     wfile.write("\nGaussianCharges results, Width="+str(width)+":\n")
     wfile.write("\n\tAverage Density: "+str(avg(densityGaussian)*density_unit))
-    wfile.write("\n\tAverage PE per molecule: "+str(avg(PE_Gaussian)/(N_PARTICLES/3.0)*PE_unit))
-    wfile.write("\n\tIsothermal Compressibility (1E-6): "+str(1E6*IC_Gaussian.in_units_of(atmosphere**-1))+'\n')
-
+    wfile.write("\n\tAverage PE per molecule: "+
+                str(avg(PE_Gaussian)/(N_PARTICLES/3.0)*PE_unit))
+    wfile.write("\n\tIsothermal Compressibility (1E-6): "+
+                str(1E6*IC_Gaussian.in_units_of(atmosphere**-1))+'\n')
+'''
 wfile.close()
