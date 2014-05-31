@@ -6,7 +6,6 @@ from simtk.unit import*
 from simtk import unit
 from pylab import*
 from sys import stdout
-import simulation1
 import sys
 
 epsilon = 8.854187817620E-12*farad/meter
@@ -36,7 +35,13 @@ system.addForce(barostat)
 add GaussianPME_DirectSpace modification with customNonBondedForce
 '''
 forceCustomNonBonded = mm.CustomNonbondedForce("-COULOMB_CONSTANT*q1*q2*erfc(p*r)/r")
-forceCustomNonBonded.setNonbondedMethod(mm.CustomNonbondedForce.CutoffPeriodic)
+if PME.getNonbondedMethod() in [2, 3, 4]:
+    forceCustomNonBonded.setNonbondedMethod(mm.CustomNonbondedForce.CutoffPeriodic)
+elif PME.getNonbondedMethod() in [1]:
+    forceCustomNonBonded.setNonbondedMethod(mm.CustomNonbondedForce.CutoffNonPeriodic)
+elif PME.getNonbondedMethod() in [0]:
+    forceCustomNonBonded.setNonbondedMethod(mm.CustomNonbondedForce.NoCutoff)
+sys.exit()
 a, b = [1.0/((0.01*nanometer)**2)]*2
 p = sqrt(a * b / (a + b))
 forceCustomNonBonded.addGlobalParameter("p", p)
