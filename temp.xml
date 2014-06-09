@@ -48,7 +48,7 @@ elif PME.getNonbondedMethod() in [0]:
     forceCustomNonBonded.setNonbondedMethod(mm.CustomNonbondedForce.NoCutoff)
 forceCustomNonBonded.setForceGroup(k)
  
-width=0.01 
+width = 0.1 # PRM 2 
 a, b = [1.0/((width*u.nanometer)**2)]*2
 p = u.sqrt(a * b / (a + b))
 forceCustomNonBonded.addGlobalParameter("p", p)
