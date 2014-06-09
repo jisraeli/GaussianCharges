@@ -43,7 +43,6 @@ simulation.context.setVelocitiesToTemperature(298.15*unit.kelvin)
 print('Equilibrating...')
 simulation.step(100000)
 
-simulation.reporters.append(app.DCDReporter('test_0.1.dcd', 100))
 simulation.reporters.append(app.StateDataReporter('test_0.1.csv', 100, step=True, 
     potentialEnergy=True, kineticEnergy=True, totalEnergy=True, temperature=True, 
     progress=True, remainingTime=True, density=True, speed=True, 
