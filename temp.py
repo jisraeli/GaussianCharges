@@ -32,7 +32,7 @@ system.addForce(barostat)
 '''
 create simulation object and integrate
 '''
-platform = mm.Platform.getPlatformByName('GPU')
+platform = mm.Platform.getPlatformByName('CUDA')
 simulation = app.Simulation(pdb.topology, system, integrator, platform)
 simulation.context.setPositions(pdb.positions)
 
@@ -43,7 +43,7 @@ simulation.context.setVelocitiesToTemperature(298.15*unit.kelvin)
 print('Equilibrating...')
 simulation.step(100000)
 
-simulation.reporters.append(app.StateDataReporter('test_0.1.csv', 100, step=True, 
+simulation.reporters.append(app.StateDataReporter('FBtest_0.1.csv', 100, step=True, 
     potentialEnergy=True, kineticEnergy=True, totalEnergy=True, temperature=True, 
     progress=True, remainingTime=True, density=True, speed=True, 
     totalSteps=5000000, separator='\t'))
