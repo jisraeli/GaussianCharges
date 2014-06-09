@@ -11,10 +11,10 @@ epsilon = 8.854187817620E-12*farad/meter
 COULOMB_CONSTANT = (AVOGADRO_CONSTANT_NA/(4.0*pi*epsilon)).value_in_unit_system(md_unit_system)
 CUTOFF_DIST = 1*nanometer
 
-InFile = './examples/WaterBox.pdb'
+InFile = './examples/2.1_2.1_2.1_WaterBox.pdb'
 pdb = app.PDBFile(InFile)
-pdb.topology.setUnitCellDimensions((2.48,2.48,2.48))
-forcefield = app.ForceField('./forcefields/tip3pGaussian.xml')
+pdb.topology.setUnitCellDimensions((2.1,2.1,2.1))
+forcefield = app.ForceField('/home/jisraeli/src/GaussianCharges/temp_w=0.1.xml')
 
 '''
 setup system
@@ -32,7 +32,7 @@ system.addForce(barostat)
 '''
 create simulation object and integrate
 '''
-platform = mm.Platform.getPlatformByName('OpenCL')
+platform = mm.Platform.getPlatformByName('GPU')
 simulation = app.Simulation(pdb.topology, system, integrator, platform)
 simulation.context.setPositions(pdb.positions)
 
@@ -43,8 +43,8 @@ simulation.context.setVelocitiesToTemperature(298.15*unit.kelvin)
 print('Equilibrating...')
 simulation.step(100000)
 
-simulation.reporters.append(app.DCDReporter('test_0.01.dcd', 100))
-simulation.reporters.append(app.StateDataReporter('test_0.01.csv', 100, step=True, 
+simulation.reporters.append(app.DCDReporter('test_0.1.dcd', 100))
+simulation.reporters.append(app.StateDataReporter('test_0.1.csv', 100, step=True, 
     potentialEnergy=True, kineticEnergy=True, totalEnergy=True, temperature=True, 
     progress=True, remainingTime=True, density=True, speed=True, 
     totalSteps=5000000, separator='\t'))
