@@ -6,12 +6,10 @@ from simtk.unit import*
 from simtk import unit
 from pylab import*
 from sys import stdout
-import simulation1
 import sys
 
 epsilon = 8.854187817620E-12*farad/meter
 COULOMB_CONSTANT = (AVOGADRO_CONSTANT_NA/(4.0*pi*epsilon)).value_in_unit_system(md_unit_system)
-CUTOFF_DIST = 1*nanometer
 
 InFile = './examples/WaterBox.pdb'
 pdb = app.PDBFile(InFile)
@@ -36,7 +34,13 @@ system.addForce(barostat)
 add GaussianPME_DirectSpace modification with customNonBondedForce
 '''
 forceCustomNonBonded = mm.CustomNonbondedForce("-COULOMB_CONSTANT*q1*q2*erfc(p*r)/r")
-forceCustomNonBonded.setNonbondedMethod(mm.CustomNonbondedForce.CutoffPeriodic)
+if PME.getNonbondedMethod() in [2, 3, 4]:
+    forceCustomNonBonded.setNonbondedMethod(mm.CustomNonbondedForce.CutoffPeriodic)
+elif PME.getNonbondedMethod() in [1]:
+    forceCustomNonBonded.setNonbondedMethod(mm.CustomNonbondedForce.CutoffNonPeriodic)
+elif PME.getNonbondedMethod() in [0]:
+    forceCustomNonBonded.setNonbondedMethod(mm.CustomNonbondedForce.NoCutoff)
+
 a, b = [1.0/((0.01*nanometer)**2)]*2
 p = sqrt(a * b / (a + b))
 forceCustomNonBonded.addGlobalParameter("p", p)

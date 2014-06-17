@@ -1,0 +1,67 @@
+<ForceField>
+ <AtomTypes>
+  <Type name="tip3p-O" class="OW" element="O" mass="15.99943"/>
+  <Type name="tip3p-H" class="HW" element="H" mass="1.007947"/>
+ </AtomTypes>
+ <Residues>
+  <Residue name="HOH">
+   <Atom name="O" type="tip3p-O"/>
+   <Atom name="H1" type="tip3p-H"/>
+   <Atom name="H2" type="tip3p-H"/>
+   <Bond from="0" to="1"/>
+   <Bond from="0" to="2"/>
+  </Residue>
+ </Residues>
+ <HarmonicBondForce>
+  <Bond class1="OW" class2="HW" length="0.09572" k="462750.4"/>
+ </HarmonicBondForce>
+ <HarmonicAngleForce>
+  <Angle class1="HW" class2="OW" class3="HW" angle="1.82421813418" k="836.8"/>
+ </HarmonicAngleForce>
+ <NonbondedForce coulomb14scale="0.833333" lj14scale="0.5">
+  <Atom type="tip3p-O" charge="-0.834" sigma="0.31507524065751241" epsilon="0.635968" parameterize="charge,epsilon"/>
+  <Atom type="tip3p-H" charge="0.417" sigma="1" epsilon="1" parameterize="charge,epsilon"/>
+ </NonbondedForce>
+ <Script>
+
+# Create a CustomNonbondedForce to compute missing Gaussian chunk.
+
+from math import pi
+import numpy as np
+from simtk import openmm as mm
+from simtk.openmm import app
+from simtk import unit as u
+
+epsilon = 8.854187817620E-12*u.farad/u.meter
+COULOMB_CONSTANT = (u.AVOGADRO_CONSTANT_NA/(4.0*pi*epsilon)).value_in_unit_system(u.md_unit_system)
+
+N_PARTICLES = sys.getNumParticles()
+PME = sys.getForce(2)
+k = PME.getForceGroup()
+
+forceCustomNonBonded = mm.CustomNonbondedForce("-COULOMB_CONSTANT*q1*q2*erfc(p*r)/r")
+if PME.getNonbondedMethod() in [2, 3, 4]:
+    forceCustomNonBonded.setNonbondedMethod(mm.CustomNonbondedForce.CutoffPeriodic)
+elif PME.getNonbondedMethod() in [1]:
+    forceCustomNonBonded.setNonbondedMethod(mm.CustomNonbondedForce.CutoffNonPeriodic)
+elif PME.getNonbondedMethod() in [0]:
+    forceCustomNonBonded.setNonbondedMethod(mm.CustomNonbondedForce.NoCutoff)
+forceCustomNonBonded.setForceGroup(k)
+ 
+width = 0.1001 # PRM 2 
+a, b = [1.0/((width*u.nanometer)**2)]*2
+p = u.sqrt(a * b / (a + b))
+forceCustomNonBonded.addGlobalParameter("p", p)
+forceCustomNonBonded.addGlobalParameter("COULOMB_CONSTANT", COULOMB_CONSTANT)
+forceCustomNonBonded.addPerParticleParameter("q")
+for i in range(N_PARTICLES):
+    params = PME.getParticleParameters(i)[0]
+    forceCustomNonBonded.addParticle([params])
+for i in range(PME.getNumExceptions()):
+    Q1, Q2, QProd = PME.getExceptionParameters(i)[:3]
+    forceCustomNonBonded.addExclusion(Q1, Q2)
+sys.addForce(forceCustomNonBonded) 
+
+  </Script>
+</ForceField>
+
