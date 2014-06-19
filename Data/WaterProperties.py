@@ -1,7 +1,7 @@
 import numpy as np
 from math import*
 from matplotlib import pyplot as plt
-
+from matplotlib.backends.backend_pdf import PdfPages
 
 def getProperty(datalines, lineIndex):
     properties = [['Liquid', 'Density'],
@@ -18,8 +18,7 @@ def getProperty(datalines, lineIndex):
                 print elemName
                 return elemName
 
-def extractData(InFile):
-    lines = open(InFile).readlines()
+def extractTestData(lines):
     datalines = []
     for line in lines:
         dataline = line.split()
@@ -55,31 +54,110 @@ def extractData(InFile):
             datablock.append(datarow)
     return data
 
-#for prop in data.keys()[:1]:
-data = extractData('simple_liquidTest.out')
-dataFull = extractData('tip3g_liquidTest.out')
-data['legend'] = '3Params'
-dataFull['legend'] = '6Params'
-figures = []
-for i in range(len(data.keys()[:6])):
-    prop = data.keys()[:6][i]
-    Data = np.asarray(data[prop])
-    DataFull = np.asarray(dataFull[prop])
-    tempVals = Data[:, 0]
-    experimentalVals = Data[:, 2]
-    calcVals = Data[:, 3]
-    calcDevs = Data[:, 4]
-    calcFullVals = DataFull[:, 3]
-    calcFullDevs = DataFull[:, 4]
-    #fig = plt.figure()
-    figure = plt.subplot(2,3,i+1)
-    plt.title(prop)
-    lineExp = plt.plot(tempVals, experimentalVals, color='red')
-    line = plt.errorbar(tempVals, calcVals, color='green', yerr=calcDevs)
-    lineFull = plt.errorbar(tempVals, calcFullVals, color='blue', yerr=calcFullDevs)
-    #plt.legend([lineExp, line, lineFull], ['Experiment', data['legend'], dataFull['legend']])
-    if i>2:
-        plt.xlabel('Temperaure')
-    if i==3:
-        plt.legend([lineExp, line, lineFull], ['Experiment', data['legend'], dataFull['legend']], loc='best')
-plt.show()
+
+def SplitIterations(InFile):
+    lines = open(InFile).readlines()
+    badIter = ['Objective', 'function', 'rises!']
+    iterLines = []
+    iterList = []
+    i = 1
+    for line in lines:
+        dataline = line.split()
+        if 'Iteration' in dataline and str(i)+':' in dataline:
+            print "saved iteration ", i
+            iterList.append(iterLines)
+            iterLines = []
+            i += 1
+        elif [True]*len(badIter) == [word in dataline for word in badIter]:
+            print "skipping bad iteration!"
+            iterLines = []
+            i += 1
+        iterLines.append(line)
+    return iterList
+
+
+def extractData(InFile, Test=True, Optimize=False, OnlyLast=False):
+    if Test and not Optimize:
+        lines = open(InFile).readlines()
+        return extractTestData(lines)
+    if not Test and Optimize:
+        iterLines = SplitIterations(InFile)
+        if OnlyLast:
+            return extractTestData(iterLines.pop())
+        else:
+            data = []
+            for lines in iterLines:
+                data.append(extractTestData(lines))
+            return data
+
+
+def plotProperties(dataList, fileName, Test=True, Optimize=False, OnlyLast=False):
+    if Test and not Optimize:
+        data = dataList
+        pp = PdfPages(fileName)
+        for i in range(len(data.keys()[:6])):
+            prop = data.keys()[:6][i]
+            Data = np.asarray(data[prop])
+            tempVals = Data[:, 0]
+            experimentalVals = Data[:, 2]
+            calcVals = Data[:, 3]
+            calcDevs = Data[:, 4]
+            figure = plt.subplot(1, 2, (i % 2) + 1)
+            plt.xlabel('Temperaure')
+            if i%2==0:
+                plt.ylabel(prop)
+                plt.title('Test Results:')
+            elif i%2==1:
+                plt.title(prop)
+            lineExp = plt.errorbar(tempVals, experimentalVals, color='red')
+            line = plt.errorbar(tempVals, calcVals, color='blue', yerr=calcDevs)
+            if i%2==0:
+                plt.legend([lineExp, line], ['Experiment', 'Calculated'], loc='best')
+                pp.savefig()
+                plt.clf()
+        pp.close()
+    elif not Test and Optimize:
+        pp = PdfPages(fileName)
+        for j in range(len(dataList)):
+            data = dataList[j]
+            for i in range(len(data.keys()[:6])):
+                prop = data.keys()[:6][i]
+                Data = np.asarray(data[prop])
+                tempVals = Data[:, 0]
+                experimentalVals = Data[:, 2]
+                calcVals = Data[:, 3]
+                calcDevs = Data[:, 4]
+                plt.subplot(1, 2, (i % 2) + 1)
+                plt.xlabel('Temperaure')
+                if i % 2 == 0:
+                    plt.ylabel(prop)
+                    plt.title('Iteration '+str(j)+' Results:')
+                elif i % 2 == 1:
+                    plt.title(prop)
+                lineExp = plt.errorbar(tempVals, experimentalVals, color='red')
+                line = plt.errorbar(tempVals, calcVals, color='blue', yerr=calcDevs)
+                if i % 2 == 0:
+                    plt.legend([lineExp, line], ['Experiment', 'Calculated'], loc='best')
+                    pp.savefig()
+                    plt.clf()
+        pp.close()
+
+
+def generateAnalysis(InFile):
+    if 'Test' in InFile and not 'Optimize' in InFile:
+        test = True
+        data = extractData(InFile, Test)
+        splitName = InFile.split('Test')
+        fileName = splitName[0]+'_Report.pdf'
+        plotProperties(data, fileName, Test=test)
+    if not 'Test' in InFile and 'Optimize' in InFile:
+        test = False
+        optimize = True
+        data = extractData(InFile, Test=test, Optimize=True)
+        splitName = InFile.split('Optimize')
+        fileName = splitName[0]+'_Report.pdf'
+        plotProperties(data, fileName, Test=test, Optimize=optimize)
+
+InFile = '6ParamOptimize.out'
+generateAnalysis(InFile)
+
