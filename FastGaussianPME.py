@@ -11,7 +11,7 @@ import sys
 epsilon = 8.854187817620E-12*farad/meter
 COULOMB_CONSTANT = (AVOGADRO_CONSTANT_NA/(4.0*pi*epsilon)).value_in_unit_system(md_unit_system)
 
-InFile = './examples/WaterBox.pdb'
+InFile = './WaterBoxes/WaterBox.pdb'
 pdb = app.PDBFile(InFile)
 pdb.topology.setUnitCellDimensions((2.48,2.48,2.48))
 forcefield = app.ForceField('tip3p.xml')
@@ -59,10 +59,10 @@ system.addForce(forceCustomNonBonded)
 '''
 create simulation object and integrate
 '''
-platform = mm.Platform.getPlatformByName('OpenCL')
+platform = mm.Platform.getPlatformByName('CPU')
 simulation = app.Simulation(pdb.topology, system, integrator, platform)
 simulation.context.setPositions(pdb.positions)
-
+sys.exit()
 print('Minimizing...')
 simulation.minimizeEnergy()
 
