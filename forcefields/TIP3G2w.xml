@@ -61,8 +61,8 @@ forceCustomNonBonded.setForceGroup(k)
 width_H = 0.05 # PRM 2
 width_O = 0.1 # PRM 2
 
-def Gwidth(width):
-    return 1.0/((width*nanometer)**2)
+# def Gwidth(width):
+#    return 1.0/((width*u.nanometer)**2)
  
 forceCustomNonBonded.addGlobalParameter("COULOMB_CONSTANT", COULOMB_CONSTANT)
 forceCustomNonBonded.addPerParticleParameter("q")
@@ -78,8 +78,9 @@ chargeMax = max(chargeList)
 
 # create widthDict dictionary so widthDict['charge'] = width of that charge
 widthDict = {}
-widthDict[str(chargeMax)] = Gwidth(width_H)
-widthDict[str(chargeMin)] = Gwidth(width_O)
+widthDict[str(chargeMax)] = 1.0/((width_H*u.nanometer)**2)
+widthDict[str(chargeMin)] = 1.0/((width_O*u.nanometer)**2)
+widthDict['0.0 e'] = (widthDict[str(chargeMax)] + widthDict[str(chargeMin)]) / 2.0
 
 # copy charges into customForce and assign widths using dictionary
 for i in range(N_PARTICLES):
@@ -91,6 +92,6 @@ for i in range(N_PARTICLES):
 for i in range(PME.getNumExceptions()):
     Q1, Q2, QProd = PME.getExceptionParameters(i)[:3]
     forceCustomNonBonded.addExclusion(Q1, Q2)
-system.addForce(forceCustomNonBonded)
+sys.addForce(forceCustomNonBonded)
   </Script>
 </ForceField>
