@@ -60,11 +60,8 @@ forceCustomNonBonded.setForceGroup(k)
 coDist = PME.getCutoffDistance()
 forceCustomNonBonded.setCutoffDistance(coDist)
 
-width_H = 0.05 # PRM 2
-width_O = 0.1 # PRM 2
-
-# def Gwidth(width):
-#    return 1.0/((width*u.nanometer)**2)
+width_H = 0.01 # PRM 2
+width_O = 0.01 # PRM 2
  
 forceCustomNonBonded.addGlobalParameter("COULOMB_CONSTANT", COULOMB_CONSTANT)
 forceCustomNonBonded.addPerParticleParameter("q")
