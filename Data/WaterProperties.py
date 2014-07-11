@@ -1,8 +1,10 @@
+#!/Users/jisraeli/Library/Enthought/Canopy_64bit/User/bin/python
+
 import numpy as np
 from math import*
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
-
+import sys, getopt
 
 def getProperty(datalines, lineIndex):
     properties = [['Density'],
@@ -142,21 +144,22 @@ def plotFigure(pp, data, Test=True, Optimize=False, Prop=None,
                     pp.savefig()
                     plt.clf()
     if Optimize and not Test:
+        print "plotting ", Prop, "..."
         plt.subplot(1, 1, 1)
         N = len(data.keys())
         colorInds = np.linspace(0.0, 1.0, num=N+1)[::-1]
-        i = 0
+        i = N - 3
+        if i<0:
+            i = 0
         while i < N-1:
-            iteration = data.keys()[i]
-            Data = np.asarray(data[iteration])
+            Data = np.asarray(data[str(i)])
             tempVals = Data[:, 0]
             calcVals = Data[:, 3]
             col = colorInds[i+1]
             plt.errorbar(tempVals, calcVals, color=str(col))
             i += 1
         prop = Prop
-        iteration = data.keys()[i]
-        Data = np.asarray(data[iteration])
+        Data = np.asarray(data[str(i)])
         tempVals = Data[:, 0]
         experimentalVals = Data[:, 2]
         calcVals = Data[:, 3]
@@ -167,17 +170,24 @@ def plotFigure(pp, data, Test=True, Optimize=False, Prop=None,
         tip3pfbData = np.asarray(tip3pfb[prop])
         tip3pfbVals = tip3pfbData[:, 3]
         tip3pfbDevs = tip3pfbData[:, 4]
-        lineExp = plt.errorbar(tempVals, experimentalVals, color='red', lw='2')
+        lineExp = plt.errorbar(tempVals, experimentalVals, color='red', marker='D',lw='2')
         line_tip3g = plt.errorbar(tempVals, calcVals, color='0.0', lw='2',
-                                  yerr=calcDevs)
+                                  yerr=calcDevs, marker='s')
         line_tip3p = plt.errorbar(tempVals, tip3pVals, color='green', lw='5',
-                                  yerr=tip3pDevs, ls=':')
-        line_tip3pfb = plt.errorbar(tempVals, tip3pfbVals, color='blue',
-                                    lw='5', yerr=tip3pfbDevs, ls='--')
+                                  yerr=tip3pDevs, ls=':', marker='v')
+        line_tip3pfb = plt.errorbar(tempVals, tip3pfbVals, color='blue', marker='*',
+                                    lw='2', yerr=tip3pfbDevs, ls=':')
         plt.xlabel('Temperaure')
         plt.title(prop)
         plt.legend([lineExp, line_tip3g, line_tip3p, line_tip3pfb],
                    ['Experiment', 'TIP3G', 'TIP3P', 'TIP3P-FB'], loc='best')
+        if 'Density' in prop:
+            plt.ylim(960, 1010)
+        elif 'Isothermal' in prop:
+            plt.ylim(30, 70)
+        elif 'Dielectric' in prop:
+            ymin, ymax = plt.ylim()
+            plt.ylim(ymin, 120)
         pp.savefig()
         plt.clf()
 
@@ -190,10 +200,12 @@ def plotProperties(dataList, fileName, Test=True, Optimize=False,
         plotFigure(pp, data)
         pp.close()
     elif not Test and Optimize:
+        print("creating pdf...")
         pp = PdfPages(fileName)
         for prop in dataList.keys():
             data = dataList[prop]
             plotFigure(pp, data, Test, Optimize, prop, tip3p, tip3pfb)
+        print ("Saving pdf...")
         pp.close()
 
 
@@ -215,5 +227,28 @@ def generateAnalysis(InFile):
         plotProperties(data, fileName, Test=test, Optimize=optimize,
                        tip3p=tip3pData, tip3pfb=tip3pfbData)
 
-InFile = '6ParamLiquidOptimize.out'
-generateAnalysis(InFile)
+
+def main(argv):
+    inputfile = ''
+    try:
+        opts, args = getopt.getopt(argv, "hi:o:", ["ifile="])
+    except getopt.GetoptError:
+        print 'test.py -i <inputfile>'
+        sys.exit(2)
+    for opt, arg in opts:
+        if opt == '-h':
+            print 'test.py -i <inputfile>'
+            sys.exit()
+        elif opt in ("-i", "--ifile"):
+            inputfile = arg
+    print 'Input file is "', inputfile
+    generateAnalysis(inputfile)
+print("Report is Ready!")
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
+
+#InFile = '6Param_LiquidOptimize.out'
+#generateAnalysis(InFile)
+#print("Report is Ready!")
