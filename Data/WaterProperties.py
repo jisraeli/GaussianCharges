@@ -118,7 +118,7 @@ def extractData(InFile, Test=True, Optimize=False, OnlyLast=False):
 
 
 def plotFigure(pp, data, Test=True, Optimize=False, Prop=None,
-               tip3p=None, tip3pfb=None):
+               CompareData=None):
     if Test and not Optimize:
         for i in range(len(data.keys()[:6])):
                 prop = data.keys()[:6][i]
@@ -158,21 +158,47 @@ def plotFigure(pp, data, Test=True, Optimize=False, Prop=None,
             col = colorInds[i+1]
             plt.errorbar(tempVals, calcVals, color=str(col))
             i += 1
-        prop = Prop
         Data = np.asarray(data[str(i)])
         tempVals = Data[:, 0]
         experimentalVals = Data[:, 2]
         calcVals = Data[:, 3]
         calcDevs = Data[:, 4]
+        lineExp = plt.errorbar(tempVals, experimentalVals, color='red', marker='D',lw='2')
+        line_tip3g = plt.errorbar(tempVals, calcVals, color='0.0', lw='2',
+                                  yerr=calcDevs, marker='s')
+            
+        NameList = ['Model', 'Experiment']
+        LineList = [line_tip3g, lineExp]
+        prop = Prop
+        colorList = ['green', 'blue', 'orange']
+        markerList = ['v', '*', '^']
+        i = 0
+        for model in CompareData.keys():
+            modelData = CompareData[model]
+            propData = np.asarray(modelData[prop])
+            propVals = propData[:, 3]
+            propDevs = propData[:, 4]
+            tempLine = plt.errorbar(tempVals, propVals, color=colorList[i], lw='5',
+                                  yerr=propDevs, ls=':', marker=markerList[i])
+            NameList.append(model)
+            LineList.append(tempLine)
+            i += 1
+        print "NameList: ", NameList
+        plt.xlabel('Temperaure')
+        plt.title(prop)
+        plt.legend(LineList, NameList, loc='best')
+
+
+
+        
+        '''
         tip3pData = np.asarray(tip3p[prop])
         tip3pVals = tip3pData[:, 3]
         tip3pDevs = tip3pData[:, 4]
         tip3pfbData = np.asarray(tip3pfb[prop])
         tip3pfbVals = tip3pfbData[:, 3]
         tip3pfbDevs = tip3pfbData[:, 4]
-        lineExp = plt.errorbar(tempVals, experimentalVals, color='red', marker='D',lw='2')
-        line_tip3g = plt.errorbar(tempVals, calcVals, color='0.0', lw='2',
-                                  yerr=calcDevs, marker='s')
+        
         line_tip3p = plt.errorbar(tempVals, tip3pVals, color='green', lw='5',
                                   yerr=tip3pDevs, ls=':', marker='v')
         line_tip3pfb = plt.errorbar(tempVals, tip3pfbVals, color='blue', marker='*',
@@ -181,6 +207,7 @@ def plotFigure(pp, data, Test=True, Optimize=False, Prop=None,
         plt.title(prop)
         plt.legend([lineExp, line_tip3g, line_tip3p, line_tip3pfb],
                    ['Experiment', 'TIP3G', 'TIP3P', 'TIP3P-FB'], loc='best')
+        '''
         if 'Density' in prop:
             plt.ylim(960, 1010)
         elif 'Isothermal' in prop:
@@ -193,7 +220,7 @@ def plotFigure(pp, data, Test=True, Optimize=False, Prop=None,
 
 
 def plotProperties(dataList, fileName, Test=True, Optimize=False,
-                   OnlyLast=False, tip3p=None, tip3pfb=None):
+                   OnlyLast=False, compare=None):
     if Test and not Optimize:
         data = dataList
         pp = PdfPages(fileName)
@@ -204,7 +231,7 @@ def plotProperties(dataList, fileName, Test=True, Optimize=False,
         pp = PdfPages(fileName)
         for prop in dataList.keys():
             data = dataList[prop]
-            plotFigure(pp, data, Test, Optimize, prop, tip3p, tip3pfb)
+            plotFigure(pp, data, Test, Optimize, prop, CompareData=compare)
         print ("Saving pdf...")
         pp.close()
 
@@ -222,10 +249,21 @@ def generateAnalysis(InFile):
         data = extractData(InFile, Test=test, Optimize=True)
         splitName = InFile.split('Optimize')
         fileName = splitName[0]+'_OptimizationReport.pdf'
-        tip3pData = extractData('tip3p.txt')
-        tip3pfbData = extractData('tip3p-fb.txt')
+        CompareData = {}
+        IncludeTIP4Pfb = raw_input("Include TIP4P-FB in the report (y/n)? ")
+        if IncludeTIP4Pfb == 'y':
+            tip4pfbData = extractData('tip4p-fb.out')
+            CompareData['TIP4P-FB'] = tip4pfbData
+        IncludeTIP3P = raw_input("Include TIP3P in the report (y/n)? ")
+        if IncludeTIP3P == 'y':
+            tip3pData = extractData('tip3p.txt')
+            CompareData['TIP3P'] = tip3pData
+        IncludeTIP3Pfb = raw_input("Include TIP3P-FB in the report (y/n)? ")
+        if IncludeTIP3Pfb == 'y':
+            tip3pfbData = extractData('tip3p-fb.txt')
+            CompareData['TIP3P-FB'] = tip3pfbData
         plotProperties(data, fileName, Test=test, Optimize=optimize,
-                       tip3p=tip3pData, tip3pfb=tip3pfbData)
+                       compare=CompareData)
 
 
 def main(argv):
