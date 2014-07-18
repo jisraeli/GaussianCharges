@@ -210,6 +210,8 @@ def plotFigure(pp, data, Test=True, Optimize=False, Prop=None,
         '''
         if 'Density' in prop:
             plt.ylim(960, 1010)
+            if 'TIP4P-FB' in CompareData.keys():
+                plt.ylim(960, 1002)
         elif 'Isothermal' in prop:
             plt.ylim(30, 70)
         elif 'Dielectric' in prop:
@@ -262,6 +264,10 @@ def generateAnalysis(InFile):
         if IncludeTIP3Pfb == 'y':
             tip3pfbData = extractData('tip3p-fb.txt')
             CompareData['TIP3P-FB'] = tip3pfbData
+        IncludeiAmoeba = raw_input("Include iAmoeba in the report (y/n)? ")
+        if IncludeiAmoeba == 'y':
+            iAmoebaData = extractData('iamoeba.out')
+            CompareData['iAmoeba'] = iAmoebaData
         plotProperties(data, fileName, Test=test, Optimize=optimize,
                        compare=CompareData)
 
